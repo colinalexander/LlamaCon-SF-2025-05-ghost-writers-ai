@@ -1,151 +1,135 @@
-
-# **[Project Name]**
+# 👻 Ghost-Writers.AI
 
 ### **Hackathon Details**
-- **Hackathon Name:** [Name of the hackathon]  
-- **Location:** [Physical/virtual location]  
-- **Date:** [Start and end date of the hackathon]  
-- **Website/URL:** [Hackathon link]  
-- **Objective:** [Hackathon theme or goal (if provided)]  
 
----
+- **Hackathon Name:** LlamaCon Hackathon 2024
+- **Location:** San Francisco, CA @ Shack15 / Cerebral Valley
+- **Date:** May 3–4, 2024
+- **Website/URL:** [LlamaCon Hackathon](https://cerebralvalley.ai/e/llamacon-hackathon-2025)
+- **Objective:** Build an impactful, creative AI-powered tool within 24 hours, using sponsor tools like CrewAI, Groq, and Tavus.
 
-## **Overview**
-Provide a brief introduction to your project, including the problem it solves and its significance. Highlight the value and impact of the solution.
+# ![Ghost-Writers.AI Logo](static/Ghost-Writers-Logo.png)
 
-**Example:**  
-"[Project Name] is a platform designed to simplify [problem domain]. It enables users to [key benefit], ensuring an intuitive and efficient experience while addressing key challenges in [industry/domain]."
+## Overview
 
----
+**Ghost-Writers.AI** empowers creative individuals to build structured fiction using modular AI tools. We combine character cards, scene design, AI memory, and real-time storytelling to help writers collaborate with AI, not compete with it.
 
-## **Table of Contents**
-1. [Motivation](#motivation)  
-2. [Features](#features)  
-3. [Tech Stack](#tech-stack)  
-4. [Setup and Installation](#setup-and-installation)  
-5. [How It Works](#how-it-works)  
-6. [Challenges](#challenges)  
-7. [Future Improvements](#future-improvements)  
-8. [Contributors](#contributors)  
-9. [License](#license)
+Our demo showcases an intuitive writing platform backed by CrewAI agent teams, Groq's blazing-fast LLM inference, and Tavus-generated author interactions.
 
----
+## Table of Contents
 
-## **Motivation**
-Explain the inspiration for the project. Clearly define the problem being addressed, who benefits, and how your solution stands out.
+1. [Motivation](#motivation)
+1. [Features](#features)
+1. [Tech Stack](#tech-stack)
+1. [Setup and Installation](#setup-and-installation)
+1. [How It Works](#how-it-works)
+1. [Challenges](#challenges)
+1. [Future Improvements](#future-improvements)
+1. [Contributors](#contributors)
+1. [License](#license)
+1. [Contact](#contact)
 
-**Example:**  
-"In [domain/industry], [problem] often leads to inefficiencies or missed opportunities. [Project Name] bridges the gap by providing a [solution description]."
+## Motivation
 
----
+Writing a novel is overwhelming for many creatives. They struggle with structure, consistency, and momentum. Ghost-Writers.AI lowers the barrier to storytelling by offering structured tools and an AI collaboration framework that assists — not replaces — the human voice.
 
-## **Features**
-Highlight the project's main features. Use bullet points for clarity.
+Ghost-Writers.AI uniquely combines agent orchestration, narrative memory, and modular creation tools to truly empower fiction writers.
 
-- **Feature 1:** Brief description.  
-- **Feature 2:** Brief description.  
-- **Feature 3:** Brief description.  
+## Features
 
-**Example:**  
-- **Automated Processing:** Streamline workflows using intelligent automation.  
-- **Customizable Dashboards:** Tailor views for individual users.  
-- **Real-time Notifications:** Stay informed with timely alerts.  
+- **Character Cards:** Define characters with background, traits, and motivations.
+- **Scene Cards:** Build scenes with structured setting, conflict, and goals.
+- **AI Memory:** Scene summaries are automatically remembered and influence future scenes.
+- **CrewAI Agent Collaboration:** Modular agents like Plot Architect and Dialogue Polisher assist the writer.
+- **Groq Fast Inference:** Lightning-speed scene generation for real-time creative flow.
+- **Tavus Video:** Demo video showing fictional author-AI collaboration.
 
----
+## Tech Stack
 
-## **Tech Stack**
-List the technologies and tools used in the project. Categorize them into sections like backend, database, and environment management.
+- **Frontend:** React.js (deployed via Vercel or local demo)
+- **Backend:** FastAPI (Python)
+- **Agent Orchestration:** CrewAI
+- **LLM Inference:** Groq API (OpenRouter fallback)
+- **Video Generation:** Tavus
+- **Environment Management:** uv (via Homebrew)
 
-**Example:**  
-- **Backend:** Python (FastAPI, Flask)  
-- **Environment Management:** [uv](https://docs.astral.sh/uv/)  
-- **Database:** PostgreSQL, SQLite  
-- **APIs/Integrations:** OpenAI API, Google Maps API  
-- **Deployment:** Docker, AWS, or similar  
+## Setup and Installation
 
----
+1. Clone the repository:
 
-## **Setup and Installation**
-Provide step-by-step instructions to set up the project locally, emphasizing MacOS setup via Homebrew.
+```bash
+git clone https://github.com/your-repo/ghost-writers-ai.git
+cd ghost-writers-ai
+```
 
-1. Clone the repository:  
-   ```bash
-   git clone https://github.com/your-repo/project-name.git
-   cd project-name
-   ```
+2. Install `uv` via Homebrew (MacOS):
 
-2. Install `uv` for environment management (MacOS via Homebrew):  
-   ```bash
-   brew install astral-sh/uv/uv
-   ```
+```bash
+brew install astral-sh/uv/uv
+```
 
-3. Sync the virtual environment provided in the repository:  
-   ```bash
-   uv sync
-   ```
+3. Sync environment dependencies:
 
-4. To install additional dependencies, use:  
-   ```bash
-   uv add my_package
-   ```
+```bash
+uv sync
+```
 
-5. Set up environment variables:  
-   - Create a `.env` file in the root directory.  
-   - Add the following variables:  
-     ```
-     API_KEY=your-api-key
-     DATABASE_URL=your-database-url
-     ```
+4. Add environment variables to `.env`:
 
-6. Run the development server:  
-   ```bash
-   python main.py
-   ```
+```
+GROQ_API_KEY=your-groq-api-key
+TAVUS_API_KEY=your-tavus-api-key
+CREWAI_API_KEY=your-crewai-key
+```
 
-7. Access the application at `http://localhost:8000`.
+5. Start backend server:
 
----
+```bash
+uv pip install fastapi uvicorn
+uvicorn backend.server:app --reload
+```
 
-## **How It Works**
-Provide a brief walkthrough of the project’s workflow and logic. Include diagrams or flowcharts if needed.
+6. Run frontend (if local):
 
-**Example:**  
-1. Users register and log in.  
-2. [Key functionality] processes data in real time.  
-3. [Output or outcome] is generated and presented to the user.  
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
----
+7. Access app at `http://localhost:3000`.
 
-## **Challenges**
-Describe the obstacles you faced during development and how you overcame them.
+## How It Works
 
-**Example:**  
-- **Time Constraints:** Prioritized core features to ensure a functional MVP.  
-- **API Integration:** Resolved rate-limiting issues by optimizing requests.  
-- **Collaborative Workflows:** Used GitHub Projects for task management and code reviews.  
+1. User creates character and scene cards.
+2. User submits scene setup ➔ CrewAI agents generate scene drafts.
+3. Groq API processes text generation for speed.
+4. Scene summaries are captured by AI Memory Manager.
+5. Tavus-generated video showcases fictional author collaboration.
 
----
+## Challenges
 
-## **Future Improvements**
-List ideas for future development and scalability.
+- **Agent Coordination:** Structuring modular CrewAI agents to collaborate meaningfully.
+- **Memory Handling:** Managing scene summaries across evolving narrative arcs.
+- **Frontend-Backend Sync:** Rapid linking of React frontend to FastAPI endpoints.
+- **Tight Deadline:** Focused on "working core" over feature sprawl.
 
-- **Add ML Capabilities:** Implement predictive analytics for enhanced performance.  
-- **Mobile Compatibility:** Build a dedicated mobile app for better accessibility.  
-- **Localization:** Add multilingual support to reach a global audience.  
+## Future Improvements
 
----
+- Richer worldbuilding templates (fantasy, sci-fi, etc.).
+- Multiplayer collaborative writing rooms.
+- Genre-specific AI writing personas.
+- Deeper narrative memory across 10,000+ words.
 
-## **Contributors**
-Acknowledge team members and their roles. Include links to GitHub profiles.
+## Contributors
 
-**Example:**  
-- **[Your Name]** - Backend Developer ([GitHub](https://github.com/yourusername))  
-- **[Teammate Name]** - Frontend Developer ([GitHub](https://github.com/teammateusername))  
-- **[Other Teammate Name]** - UI/UX Designer ([GitHub](https://github.com/otherusername))  
+- **Colin Alexander** - Backend & AI Engineer ([GitHub](https://github.com/colinalexander))
+- **[Frontend Teammate]** - Frontend Developer _(Looking for you!)_
 
----
+## License
 
-## **License**
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
+This project is licensed under the MIT License.
 
----
+## Contact
+
+- **Discord:** alexander61239
