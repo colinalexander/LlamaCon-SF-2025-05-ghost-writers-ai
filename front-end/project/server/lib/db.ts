@@ -321,7 +321,9 @@ export async function initializeDatabase() {
         changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         changed_by TEXT,
         FOREIGN KEY (scene_id) REFERENCES scenes(id) ON DELETE CASCADE
-=======
+      )
+    `);
+    
     // Create tavus_videos table for storing video status
     await dbRW.execute(`
       CREATE TABLE IF NOT EXISTS tavus_videos (
@@ -345,7 +347,6 @@ export async function initializeDatabase() {
         created_at TEXT NOT NULL,
         project_id TEXT,
         FOREIGN KEY (project_id) REFERENCES projects(id)
-
       )
     `);
     
