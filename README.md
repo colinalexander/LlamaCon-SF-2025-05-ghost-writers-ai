@@ -162,8 +162,8 @@ npm run dev
 
 ## Contributors
 
-- **Colin Alexander** - Backend & AI Engineer ([GitHub](https://github.com/colinalexander))
-- **[Frontend Teammate]** - Frontend Developer _(Looking for you!)_
+- **Colin Alexander** - Frontend & Tavus Avitars ([GitHub](https://github.com/colinalexander))
+- **[Frontend Teammate]** - Backend AI Engineer (including CrewAI integration)
 
 ## License
 
