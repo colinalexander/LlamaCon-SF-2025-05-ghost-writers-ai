@@ -29,7 +29,7 @@ class Memory(MemoryBase):
     created_at: datetime
     
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Stub implementation - will be replaced with database
 memory_db = {}

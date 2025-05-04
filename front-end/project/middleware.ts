@@ -34,13 +34,33 @@ export function middleware(request: NextRequest) {
 
   // Protect API routes
   if (request.nextUrl.pathname.startsWith('/api/workspace')) {
-    const projectId = request.headers.get('x-project-id');
-    
-    if (!projectId) {
-      return NextResponse.json(
-        { error: 'Project ID is required' },
-        { status: 401 }
-      );
+    // For GET requests, allow projectId from query params
+    if (request.method === 'GET') {
+      const url = new URL(request.url);
+      const projectIdFromQuery = url.searchParams.get('projectId');
+      const projectIdFromHeader = request.headers.get('x-project-id');
+      
+      // Allow either query param or header for GET requests
+      if (!projectIdFromQuery && !projectIdFromHeader) {
+        console.log('Middleware: No project ID found in query params or headers');
+        return NextResponse.json(
+          { error: 'Project ID is required in query parameters or x-project-id header' },
+          { status: 401 }
+        );
+      }
+      
+      console.log('Middleware: Project ID found, proceeding with API request');
+    } else {
+      // For non-GET requests, require the header
+      const projectId = request.headers.get('x-project-id');
+      
+      if (!projectId) {
+        console.log('Middleware: No project ID found in headers for non-GET request');
+        return NextResponse.json(
+          { error: 'Project ID is required in x-project-id header' },
+          { status: 401 }
+        );
+      }
     }
   }
 

@@ -49,11 +49,28 @@ export default function ScenesPage() {
 
   const fetchScenes = async () => {
     try {
-      const response = await fetch(`/api/workspace/scenes?projectId=${projectId}`);
-      if (!response.ok) throw new Error('Failed to fetch scenes');
+      if (!projectId) {
+        toast.error('Project ID is missing');
+        setLoading(false);
+        return;
+      }
+      
+      console.log('Fetching scenes with projectId:', projectId);
+      const response = await fetch(`/api/workspace/scenes?projectId=${projectId}`, {
+        headers: { 
+          'x-project-id': projectId 
+        }
+      });
+      
+      if (!response.ok) {
+        console.error('Failed to fetch scenes:', response.status, response.statusText);
+        throw new Error(`Failed to fetch scenes: ${response.status}`);
+      }
+      
       const data = await response.json();
       setScenes(data);
     } catch (error) {
+      console.error('Scene fetch error:', error);
       toast.error('Failed to load scenes');
     } finally {
       setLoading(false);
@@ -81,9 +98,17 @@ export default function ScenesPage() {
       setScenes(newScenes);
 
       try {
+        // Make sure projectId is available before making the request
+        if (!projectId) {
+          throw new Error('Project ID is required');
+        }
+        
         const response = await fetch('/api/workspace/scenes/reorder', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'x-project-id': projectId
+          },
           body: JSON.stringify({
             scenes: newScenes.map(({ id, scene_order }) => ({ id, scene_order })),
             projectId,

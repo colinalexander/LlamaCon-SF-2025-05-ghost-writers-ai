@@ -8,21 +8,12 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { searchParams } = new URL(request.url);
-    const projectId = searchParams.get('projectId');
-
-    if (!projectId) {
-      return NextResponse.json(
-        { error: 'Project ID is required' },
-        { status: 400 }
-      );
-    }
-
+    // We only need the scene_id since the table doesn't have a project_id column
     const result = await dbRO.execute({
       sql: `SELECT * FROM scene_history 
-            WHERE scene_id = ? AND project_id = ? 
-            ORDER BY created_at DESC`,
-      args: [params.id, projectId]
+            WHERE scene_id = ? 
+            ORDER BY changed_at DESC`,
+      args: [params.id]
     });
 
     return NextResponse.json(result.rows);
@@ -41,29 +32,28 @@ export async function POST(
 ) {
   try {
     const data = await request.json();
-    const { projectId, content } = data;
+    const { changeType, changeDescription, changedBy } = data;
 
-    if (!projectId || !content) {
+    if (!changeType) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Change type is required' },
         { status: 400 }
       );
     }
 
     const result = await dbRW.execute({
       sql: `INSERT INTO scene_history (
-              id,
               scene_id,
-              project_id,
-              content,
-              created_at
-            ) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+              change_type,
+              change_description,
+              changed_by
+            ) VALUES (?, ?, ?, ?)
             RETURNING id`,
       args: [
-        crypto.randomUUID(),
         params.id,
-        projectId,
-        content
+        changeType,
+        changeDescription || null,
+        changedBy || null
       ]
     });
 

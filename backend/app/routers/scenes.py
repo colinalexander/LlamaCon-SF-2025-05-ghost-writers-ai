@@ -31,7 +31,7 @@ class Scene(SceneBase):
     created_at: datetime
     
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class SceneReorder(BaseModel):
     """Scene reordering model"""
