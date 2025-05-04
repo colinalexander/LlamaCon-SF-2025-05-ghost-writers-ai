@@ -93,7 +93,8 @@ export default function OnboardingPage() {
       
       // Add a small delay to ensure cookie is set before navigation
       setTimeout(() => {
-        router.push(`/workspace/${data.id}`);
+        // Redirect to the workspace page, which will then redirect to the project page
+        router.push(`/workspace`);
       }, 100);
     } catch (error) {
       console.error('Onboarding: Error creating project:', error);
