@@ -65,7 +65,7 @@ Goal: Generate contextual scene drafts with CrewAI
 Tasks:
 - POST /generate/scene uses: scene metadata, characters, memory, and length
 - Output stored in scene_texts
-- Hook for Llama API or Groq fallback
+- Hook for Llama API
 Acceptance Criteria:
 - Output reflects memory + length
 - Generation stored and returned
@@ -163,6 +163,6 @@ Acceptance Criteria:
 Current stack:
 - FastAPI
 - CrewAI for scene generation
-- Llama/Groq as fallback
+- Llama API
 - SQLite for development
 - PostgreSQL for production
