@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useProject } from '@/lib/project-context';
 import { toast } from 'sonner';
 import MemoryInspector from '@/components/memory/memory-inspector';
+import { ApiClient } from '@/lib/api-client';
+import { BackButton } from '@/components/ui/back-button';
 
 export default function MemoryPage() {
   const [currentSceneId, setCurrentSceneId] = useState<string | null>(null);
@@ -17,9 +19,15 @@ export default function MemoryPage() {
 
   const fetchCurrentScene = async () => {
     try {
-      const response = await fetch(`/api/workspace/scenes?projectId=${projectId}`);
-      if (!response.ok) throw new Error('Failed to fetch scenes');
-      const scenes = await response.json();
+      // Store projectId in localStorage for ApiClient to use
+      if (projectId) {
+        localStorage.setItem('currentProjectId', projectId);
+      }
+      
+      const scenes = await ApiClient.get<any[]>(`/api/workspace/scenes?projectId=${projectId}`, {
+        requiresProject: true
+      });
+      
       if (scenes.length > 0) {
         setCurrentSceneId(scenes[0].id);
       }
@@ -31,6 +39,7 @@ export default function MemoryPage() {
   if (!currentSceneId) {
     return (
       <div className="container mx-auto p-6">
+        <BackButton projectId={projectId || undefined} />
         <p className="text-center text-muted-foreground">
           Create a scene to start tracking memory
         </p>
@@ -40,6 +49,7 @@ export default function MemoryPage() {
 
   return (
     <div className="container mx-auto p-6">
+      <BackButton projectId={projectId || undefined} />
       <MemoryInspector sceneId={currentSceneId} />
     </div>
   );

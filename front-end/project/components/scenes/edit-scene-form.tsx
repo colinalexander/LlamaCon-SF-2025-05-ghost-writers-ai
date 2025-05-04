@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
+import { ApiClient } from '@/lib/api-client';
 
 interface EditSceneFormProps {
   scene?: {
@@ -59,31 +60,25 @@ export default function EditSceneForm({ scene, onSubmit }: EditSceneFormProps) {
     }
 
     try {
-      const url = scene
-        ? `/api/workspace/scenes/${scene.id}`
-        : '/api/workspace/scenes';
+      // Store projectId in localStorage for ApiClient to use
+      localStorage.setItem('currentProjectId', projectId);
       
-      const method = scene ? 'PUT' : 'POST';
-
       // Include explicit project ID debugging
-      console.log('Making fetch request to:', url);
-      console.log('Request payload:', { ...formData, projectId });
+      console.log('Making API request with payload:', { ...formData, projectId });
       
-      // TypeScript safety check - ensure projectId is a string (should be caught by earlier check too)
-      if (!projectId) {
-        throw new Error('Project ID is required');
+      if (scene) {
+        // Update existing scene
+        await ApiClient.put(`/api/workspace/scenes/${scene.id}`, 
+          { ...formData, projectId },
+          { requiresProject: true }
+        );
+      } else {
+        // Create new scene
+        await ApiClient.post('/api/workspace/scenes', 
+          { ...formData, projectId },
+          { requiresProject: true }
+        );
       }
-      
-      const response = await fetch(url, {
-        method,
-        headers: { 
-          'Content-Type': 'application/json',
-          'x-project-id': projectId
-        },
-        body: JSON.stringify({ ...formData, projectId })
-      });
-
-      if (!response.ok) throw new Error('Failed to save scene');
 
       toast.success(
         scene ? 'Scene updated successfully' : 'Scene created successfully'

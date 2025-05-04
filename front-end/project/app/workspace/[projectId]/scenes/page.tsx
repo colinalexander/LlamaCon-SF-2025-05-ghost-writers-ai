@@ -5,6 +5,8 @@ import { useProject } from '@/lib/project-context';
 import { toast } from 'sonner';
 import SceneCard from '@/components/scenes/scene-card';
 import CreateSceneDialog from '@/components/scenes/create-scene-dialog';
+import { ApiClient } from '@/lib/api-client';
+import { BackButton } from '@/components/ui/back-button';
 import {
   DndContext,
   DragEndEvent,
@@ -55,19 +57,13 @@ export default function ScenesPage() {
         return;
       }
       
-      console.log('Fetching scenes with projectId:', projectId);
-      const response = await fetch(`/api/workspace/scenes?projectId=${projectId}`, {
-        headers: { 
-          'x-project-id': projectId 
-        }
+      // Store projectId in localStorage for ApiClient to use
+      localStorage.setItem('currentProjectId', projectId);
+      
+      const data = await ApiClient.get<Scene[]>(`/api/workspace/scenes?projectId=${projectId}`, {
+        requiresProject: true
       });
       
-      if (!response.ok) {
-        console.error('Failed to fetch scenes:', response.status, response.statusText);
-        throw new Error(`Failed to fetch scenes: ${response.status}`);
-      }
-      
-      const data = await response.json();
       setScenes(data);
     } catch (error) {
       console.error('Scene fetch error:', error);
@@ -103,19 +99,15 @@ export default function ScenesPage() {
           throw new Error('Project ID is required');
         }
         
-        const response = await fetch('/api/workspace/scenes/reorder', {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'x-project-id': projectId
-          },
-          body: JSON.stringify({
-            scenes: newScenes.map(({ id, scene_order }) => ({ id, scene_order })),
-            projectId,
-          }),
+        // Store projectId in localStorage for ApiClient to use
+        localStorage.setItem('currentProjectId', projectId);
+        
+        await ApiClient.post('/api/workspace/scenes/reorder', {
+          scenes: newScenes.map(({ id, scene_order }) => ({ id, scene_order })),
+          projectId,
+        }, {
+          requiresProject: true
         });
-
-        if (!response.ok) throw new Error('Failed to reorder scenes');
       } catch (error) {
         toast.error('Failed to save scene order');
         fetchScenes(); // Revert to original order on error
@@ -126,6 +118,7 @@ export default function ScenesPage() {
   if (loading) {
     return (
       <div className="container mx-auto p-6">
+        <BackButton projectId={projectId || undefined} />
         <div className="grid grid-cols-1 gap-6">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-[200px] bg-muted animate-pulse rounded-lg" />
@@ -137,6 +130,7 @@ export default function ScenesPage() {
 
   return (
     <div className="container mx-auto p-6">
+      <BackButton projectId={projectId || undefined} />
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Scenes</h1>
         <CreateSceneDialog onSceneCreated={fetchScenes} />

@@ -110,7 +110,7 @@ export default function WritingCoachConversation({
       // Get the user's name if available
       const userName = user?.firstName && user?.lastName 
         ? `${user.firstName} ${user.lastName}` 
-        : user?.firstName || user?.username;
+        : user?.firstName || user?.username || '';
       
       const response = await fetch('/api/tavus/conversation', {
         method: 'POST',

@@ -56,6 +56,7 @@ Ghost-Writers.AI uniquely combines agent orchestration, narrative memory, and mo
 ## Tech Stack
 
 ### Frontend
+
 - **Framework:** Next.js 14 with App Router
 - **Database:** Turso (SQLite-based, edge-ready database)
 - **Styling:** Tailwind CSS + shadcn/ui components
@@ -68,6 +69,7 @@ Ghost-Writers.AI uniquely combines agent orchestration, narrative memory, and mo
 - **Validation:** Zod schema validation
 
 ### Backend
+
 - **API Framework:** FastAPI (Python)
 - **Agent Orchestration:** CrewAI
 - **LLM Inference:** Groq API (OpenRouter fallback)
@@ -163,7 +165,7 @@ npm run dev
 ## Contributors
 
 - **Colin Alexander** - Frontend & Tavus Avitars ([GitHub](https://github.com/colinalexander))
-- **[Frontend Teammate]** - Backend AI Engineer (including CrewAI integration)
+- **Ashish Sardana** - Backend AI Engineer (including CrewAI integration)
 
 ## License
 

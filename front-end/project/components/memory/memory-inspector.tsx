@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Lock, Edit2, Share2, Plus, BookPlus } from 'lucide-react';
 import NewMemoryDialog from './new-memory-dialog';
 import MemorySection from './memory-section';
+import { ApiClient } from '@/lib/api-client';
 
 interface MemoryEntry {
   id: string;
@@ -57,9 +58,15 @@ export default function MemoryInspector({ sceneId }: MemoryInspectorProps) {
 
   const fetchScenes = async () => {
     try {
-      const response = await fetch(`/api/workspace/scenes?projectId=${projectId}`);
-      if (!response.ok) throw new Error('Failed to fetch scenes');
-      const data = await response.json();
+      // Store projectId in localStorage for ApiClient to use
+      if (projectId) {
+        localStorage.setItem('currentProjectId', projectId);
+      }
+      
+      const data = await ApiClient.get<Scene[]>(`/api/workspace/scenes?projectId=${projectId}`, {
+        requiresProject: true
+      });
+      
       setScenes(data.sort((a: Scene, b: Scene) => a.scene_order - b.scene_order));
     } catch (error) {
       toast.error('Failed to load scenes');
@@ -68,9 +75,14 @@ export default function MemoryInspector({ sceneId }: MemoryInspectorProps) {
 
   const fetchMemories = async () => {
     try {
-      const response = await fetch(`/api/workspace/scenes/${selectedScene}/memory?projectId=${projectId}`);
-      if (!response.ok) throw new Error('Failed to fetch memories');
-      const data = await response.json();
+      // Store projectId in localStorage for ApiClient to use
+      if (projectId) {
+        localStorage.setItem('currentProjectId', projectId);
+      }
+      
+      const data = await ApiClient.get<MemoryEntry[]>(`/api/workspace/scenes/${selectedScene}/memory?projectId=${projectId}`, {
+        requiresProject: true
+      });
       
       // Group memories by category
       const grouped = data.reduce((acc: Record<string, MemoryEntry[]>, memory: MemoryEntry) => {
@@ -94,16 +106,17 @@ export default function MemoryInspector({ sceneId }: MemoryInspectorProps) {
 
   const handleNewMemory = async (entry: Omit<MemoryEntry, 'id'>) => {
     try {
-      const response = await fetch(`/api/workspace/scenes/${selectedScene}/memory`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...entry,
-          projectId,
-        }),
+      // Store projectId in localStorage for ApiClient to use
+      if (projectId) {
+        localStorage.setItem('currentProjectId', projectId);
+      }
+      
+      await ApiClient.post(`/api/workspace/scenes/${selectedScene}/memory`, {
+        ...entry,
+        projectId,
+      }, {
+        requiresProject: true
       });
-
-      if (!response.ok) throw new Error('Failed to create memory');
       
       toast.success('Memory entry added');
       setIsNewMemoryOpen(false);

@@ -39,7 +39,7 @@ export function getEnhancedPrompt(genre: string, bookInfo: BookInfo, userName?: 
   };
   
   // Create personalized greeting with user's first name if available
-  const firstName = userName ? userName.split(' ')[0] : 'the author';
+  const firstName = userName && userName.trim() !== '' ? userName.split(' ')[0] : 'the author';
   
   // Append book info and personalization instructions to the original prompt
   return `${genreConfig.prompt}
@@ -57,7 +57,8 @@ When greeting the author, address them as "${firstName}" and acknowledge key asp
 }
 
 export function createPersonalizedGreeting(genreConfig: any, bookInfo: BookInfo, userName?: string) {
-  const firstName = userName ? userName.split(' ')[0] : 'there';
+  // Handle empty or undefined userName
+  const firstName = userName && userName.trim() !== '' ? userName.split(' ')[0] : 'there';
   
   // Create a personalized greeting that acknowledges specific project details
   let greeting = `Hello ${firstName}! I'm your ${genreConfig.name}.`;

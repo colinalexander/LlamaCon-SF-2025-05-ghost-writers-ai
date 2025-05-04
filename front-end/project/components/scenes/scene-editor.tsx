@@ -8,7 +8,7 @@ import StarterKit from '@tiptap/starter-kit';
 import Highlight from '@tiptap/extension-highlight';
 import Placeholder from '@tiptap/extension-placeholder';
 import Document from '@tiptap/extension-document';
-import DocumentHistory from '@tiptap/extension-history';
+import History from '@tiptap/extension-history';
 import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
 import Collaboration from '@tiptap/extension-collaboration';
@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { History, Save, Undo, Redo, Keyboard, SparklesIcon } from 'lucide-react';
+import { History as HistoryIcon, Save, Undo, Redo, Keyboard, SparklesIcon } from 'lucide-react';
 import SceneGenerationDialog from './scene-generation-dialog';
 import {
   Tooltip,
@@ -54,7 +54,7 @@ export default function SceneEditor({ sceneId, initialContent, onSave }: SceneEd
         placeholder: 'Start writing your scene...',
       }),
       Document,
-      DocumentHistory,
+      History,
       Collaboration.configure({
         document: ydoc,
       }),
@@ -310,7 +310,7 @@ export default function SceneEditor({ sceneId, initialContent, onSave }: SceneEd
           <TabsContent value="history">
             <Card className="p-4">
               <div className="flex items-center gap-2 mb-4">
-                <History className="h-5 w-5" />
+                <HistoryIcon className="h-5 w-5" />
                 <h3 className="font-semibold">Version History</h3>
               </div>
               <ScrollArea className="h-[600px]">

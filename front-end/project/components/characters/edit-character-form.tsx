@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect, Dispatch, SetStateAction } from 'react';
 import { useProject } from '@/lib/project-context';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
@@ -8,12 +8,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ApiClient } from '@/lib/api-client';
 
 interface EditCharacterFormProps {
   character?: {
     id: string;
     name: string;
-    codename: string | null;
+    codename_or_alias: string | null;
     role: string;
     background: string;
     personality_traits: string;
@@ -25,15 +26,17 @@ interface EditCharacterFormProps {
     notes: string | null;
   };
   onSubmit: () => void;
+  formRef?: Dispatch<SetStateAction<HTMLFormElement | null>>;
 }
 
-export default function EditCharacterForm({ character, onSubmit }: EditCharacterFormProps) {
+export default function EditCharacterForm({ character, onSubmit, formRef }: EditCharacterFormProps) {
   const { projectId } = useProject();
   const [loading, setLoading] = useState(false);
+  const formElement = useRef<HTMLFormElement>(null);
 
   const [formData, setFormData] = useState({
     name: character?.name || '',
-    codename: character?.codename || '',
+    codename_or_alias: character?.codename_or_alias || '',
     role: character?.role || '',
     background: character?.background || '',
     personalityTraits: character?.personality_traits || '',
@@ -45,30 +48,43 @@ export default function EditCharacterForm({ character, onSubmit }: EditCharacter
     notes: character?.notes || ''
   });
 
+  // Set the form reference for the parent component if needed
+  useEffect(() => {
+    if (formRef && formElement.current) {
+      formRef(formElement.current);
+    }
+  }, [formRef]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const url = character
-        ? `/api/workspace/characters/${character.id}`
-        : '/api/workspace/characters';
+      // Store projectId in localStorage for ApiClient to use
+      if (projectId) {
+        localStorage.setItem('currentProjectId', projectId);
+      }
       
-      const method = character ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formData, projectId })
-      });
-
-      if (!response.ok) throw new Error('Failed to save character');
+      if (character) {
+        // Update existing character
+        await ApiClient.put(`/api/workspace/characters/${character.id}`, 
+          { ...formData, projectId },
+          { requiresProject: true }
+        );
+      } else {
+        // Create new character
+        await ApiClient.post('/api/workspace/characters', 
+          { ...formData, projectId },
+          { requiresProject: true }
+        );
+      }
 
       toast.success(
         character ? 'Character updated successfully' : 'Character created successfully'
       );
       onSubmit();
     } catch (error) {
+      console.error('Character save error:', error);
       toast.error(
         character ? 'Failed to update character' : 'Failed to create character'
       );
@@ -78,7 +94,7 @@ export default function EditCharacterForm({ character, onSubmit }: EditCharacter
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form ref={formElement} onSubmit={handleSubmit} className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
           <Label htmlFor="name">Name</Label>
@@ -92,11 +108,11 @@ export default function EditCharacterForm({ character, onSubmit }: EditCharacter
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="codename">Codename (Optional)</Label>
+          <Label htmlFor="codename_or_alias">Codename or Alias (Optional)</Label>
           <Input
-            id="codename"
-            value={formData.codename}
-            onChange={(e) => setFormData({ ...formData, codename: e.target.value })}
+            id="codename_or_alias"
+            value={formData.codename_or_alias}
+            onChange={(e) => setFormData({ ...formData, codename_or_alias: e.target.value })}
             placeholder="Alias or nickname"
           />
         </div>
@@ -212,9 +228,12 @@ export default function EditCharacterForm({ character, onSubmit }: EditCharacter
         />
       </div>
 
-      <Button type="submit" className="w-full" disabled={loading}>
-        {loading ? 'Saving...' : character ? 'Update Character' : 'Create Character'}
-      </Button>
+      {/* Only show the submit button when not used in a dialog with external buttons */}
+      {!formRef && (
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading ? 'Saving...' : character ? 'Update Character' : 'Create Character'}
+        </Button>
+      )}
     </form>
   );
 }

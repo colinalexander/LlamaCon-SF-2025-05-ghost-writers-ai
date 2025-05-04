@@ -12,6 +12,7 @@ import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ApiClient } from '@/lib/api-client';
 
 interface SceneGeneratorProps {
   sceneId: string;
@@ -21,8 +22,8 @@ interface SceneGeneratorProps {
 export default function SceneGenerator({ sceneId, onSave }: SceneGeneratorProps) {
   const [wordTarget, setWordTarget] = useState(1000);
   const [generating, setGenerating] = useState(false);
-  const [characters, setCharacters] = useState([]);
-  const [memory, setMemory] = useState([]);
+  const [characters, setCharacters] = useState<any[]>([]);
+  const [memory, setMemory] = useState<any[]>([]);
   const { projectId } = useProject();
 
   const editor = useEditor({
@@ -47,20 +48,22 @@ export default function SceneGenerator({ sceneId, onSave }: SceneGeneratorProps)
 
   const fetchContextData = async () => {
     try {
-      const [charactersRes, memoryRes] = await Promise.all([
-        fetch(`/api/workspace/characters?projectId=${projectId}`),
-        fetch(`/api/workspace/scenes/${sceneId}/memory`),
+      // Store projectId in localStorage for ApiClient to use
+      if (projectId) {
+        localStorage.setItem('currentProjectId', projectId);
+      }
+      
+      const [charactersData, memoryData] = await Promise.all([
+        ApiClient.get<any[]>(`/api/workspace/characters?projectId=${projectId}`, {
+          requiresProject: true
+        }),
+        ApiClient.get<any[]>(`/api/workspace/scenes/${sceneId}/memory`, {
+          requiresProject: true
+        })
       ]);
 
-      if (charactersRes.ok) {
-        const charactersData = await charactersRes.json();
-        setCharacters(charactersData);
-      }
-
-      if (memoryRes.ok) {
-        const memoryData = await memoryRes.json();
-        setMemory(memoryData);
-      }
+      setCharacters(charactersData);
+      setMemory(memoryData);
     } catch (error) {
       toast.error('Failed to load context data');
     }
@@ -69,25 +72,23 @@ export default function SceneGenerator({ sceneId, onSave }: SceneGeneratorProps)
   const handleGenerate = async () => {
     try {
       setGenerating(true);
-      const response = await fetch(`/api/workspace/scenes/${sceneId}/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          wordTarget,
-          projectId,
-          context: {
-            characters,
-            memory,
-          }
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to generate scene');
+      
+      // Store projectId in localStorage for ApiClient to use
+      if (projectId) {
+        localStorage.setItem('currentProjectId', projectId);
       }
-
-      const { text } = await response.json();
+      
+      const { text } = await ApiClient.post<{ text: string }>(`/api/workspace/scenes/${sceneId}/generate`, { 
+        wordTarget,
+        projectId,
+        context: {
+          characters,
+          memory,
+        }
+      }, {
+        requiresProject: true
+      });
+      
       editor?.commands.setContent(text);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to generate scene');
