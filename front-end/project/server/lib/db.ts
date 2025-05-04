@@ -1,0 +1,426 @@
+import { createClient } from '@libsql/client';
+
+// Function to generate a simple ID string that is compatible with Turso
+function generateId() {
+  // Generate a timestamp-based ID with a random suffix
+  const timestamp = Date.now().toString(36);
+  const randomSuffix = Math.random().toString(36).substring(2, 10);
+  return `${timestamp}-${randomSuffix}`;
+}
+
+// In-memory mock database for development
+const mockProjects: any[] = [];
+const mockUsers: any[] = [];
+
+// Check if we're using the real database or mock
+const useRealDb = process.env.TURSO_DATABASE_URL && 
+                  process.env.TURSO_AUTH_TOKEN_RO && 
+                  process.env.TURSO_AUTH_TOKEN_RW;
+
+// Create clients or mock implementations
+let dbRO: any;
+let dbRW: any;
+
+if (useRealDb) {
+  console.log('Using real Turso database');
+  // Read-only client for queries
+  dbRO = createClient({
+    url: process.env.TURSO_DATABASE_URL!,
+    authToken: process.env.TURSO_AUTH_TOKEN_RO!
+  });
+
+  // Read-write client for mutations
+  dbRW = createClient({
+    url: process.env.TURSO_DATABASE_URL!,
+    authToken: process.env.TURSO_AUTH_TOKEN_RW!
+  });
+} else {
+  console.log('Using in-memory mock database (Turso environment variables not set)');
+  
+  // Mock implementations
+  dbRO = {
+    execute: async (params: any) => {
+      const sql = typeof params === 'string' ? params : params.sql;
+      const args = params.args || [];
+      
+      console.log('Mock dbRO execute:', sql);
+      
+      if (sql.includes('SELECT * FROM projects')) {
+        return { rows: mockProjects };
+      }
+      
+      if (sql.includes('SELECT * FROM users WHERE email =')) {
+        const email = args[0];
+        const user = mockUsers.find(u => u.email === email);
+        return { rows: user ? [user] : [] };
+      }
+      
+      return { rows: [] };
+    }
+  };
+  
+  dbRW = {
+    execute: async (params: any) => {
+      console.log('Mock dbRW execute:', params.sql);
+      
+      if (params.sql.includes('INSERT INTO projects')) {
+        const projectId = params.args[0];
+        const project = {
+          id: projectId,
+          title: params.args[1],
+          description: params.args[2],
+          genre: params.args[3],
+          audience: params.args[4],
+          style: params.args[5],
+          story_length: params.args[6],
+          user_id: params.args[7],
+          created_at: new Date().toISOString()
+        };
+        mockProjects.push(project);
+        return { rows: [{ id: projectId }] };
+      }
+      
+      if (params.sql.includes('INSERT INTO users')) {
+        const userId = params.args[0];
+        const user = {
+          id: userId,
+          username: params.args[1],
+          email: params.args[2],
+          password_hash: params.args[3] || null,
+          salt: params.args[4] || null,
+          created_at: new Date().toISOString()
+        };
+        mockUsers.push(user);
+        return { rows: [{ id: userId }] };
+      }
+      
+      return { rows: [] };
+    }
+  };
+}
+
+// Check database version and run migrations
+async function checkDatabaseVersion() {
+  try {
+    // Check if version table exists
+    const tableExists = await dbRO.execute(`
+      SELECT name FROM sqlite_master 
+      WHERE type='table' AND name='db_version'
+    `);
+    
+    if (tableExists.rows.length === 0) {
+      // Create version table
+      await dbRW.execute(`
+        CREATE TABLE db_version (
+          version INTEGER PRIMARY KEY,
+          applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      
+      // Set initial version
+      await dbRW.execute(`
+        INSERT INTO db_version (version) VALUES (1)
+      `);
+      
+      return 1;
+    } else {
+      // Get current version
+      const versionResult = await dbRO.execute(`
+        SELECT MAX(version) as current_version FROM db_version
+      `);
+      
+      return versionResult.rows[0].current_version;
+    }
+  } catch (error) {
+    console.error('Error checking database version:', error);
+    return 0;
+  }
+}
+
+// Run database migrations
+async function migrateDatabase() {
+  if (!useRealDb) {
+    return;
+  }
+  
+  try {
+    console.log('Running database migrations...');
+    
+    // Get current version
+    const currentVersion = await checkDatabaseVersion();
+    console.log('Current database version:', currentVersion);
+    
+    // Migration 1: Add user_id column to projects table if it doesn't exist
+    if (currentVersion < 2) {
+      console.log('Running migration to version 2...');
+      
+      // Check if user_id column exists in projects table
+      const tableInfo = await dbRO.execute("PRAGMA table_info(projects)");
+      const hasUserIdColumn = tableInfo.rows.some((row: any) => row.name === 'user_id');
+      
+      if (!hasUserIdColumn) {
+        console.log('Adding user_id column to projects table...');
+        await dbRW.execute(`ALTER TABLE projects ADD COLUMN user_id TEXT REFERENCES users(id)`);
+      }
+      
+      // Update version
+      await dbRW.execute(`INSERT INTO db_version (version) VALUES (2)`);
+      console.log('Migration to version 2 completed');
+    }
+    
+    console.log('Database migrations completed');
+  } catch (error) {
+    console.error('Error during migration:', error);
+  }
+}
+
+// Initialize the database with required tables
+export async function initializeDatabase() {
+  if (!useRealDb) {
+    console.log('Using mock database, no initialization needed');
+    return;
+  }
+  
+  try {
+    console.log('Initializing database tables...');
+    
+    // Create users table
+    await dbRW.execute(`
+      CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        username TEXT NOT NULL UNIQUE,
+        email TEXT NOT NULL UNIQUE,
+        password_hash TEXT,
+        salt TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    // Create projects table with user_id foreign key
+    await dbRW.execute(`
+      CREATE TABLE IF NOT EXISTS projects (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        description TEXT,
+        genre TEXT,
+        audience TEXT,
+        style TEXT,
+        story_length TEXT,
+        user_id TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )
+    `);
+    
+    console.log('Database tables initialized successfully');
+    
+    // Run migrations after initializing tables
+    await migrateDatabase();
+  } catch (error) {
+    console.error('Error initializing database:', error);
+  }
+}
+
+export async function getProjects() {
+  try {
+    // Initialize database before querying
+    await initializeDatabase();
+    
+    const result = await dbRO.execute('SELECT * FROM projects ORDER BY created_at DESC');
+    return result.rows;
+  } catch (error) {
+    console.error('Error fetching projects:', error);
+    throw new Error('Failed to fetch projects');
+  }
+}
+
+export async function createProject(project: any) {
+  try {
+    // Initialize database before creating a project
+    await initializeDatabase();
+    
+    // Generate a simple ID
+    const projectId = generateId();
+    
+    // Ensure all values are strings to avoid type issues
+    const title = String(project.title || '');
+    const description = String(project.description || '');
+    const genre = String(project.genre || '');
+    const audience = String(project.audience || '');
+    const style = String(project.style || '');
+    const story_length = String(project.story_length || '');
+    const user_id = String(project.user_id || '');
+    
+    // Log the values for debugging
+    console.log('Creating project with values:', {
+      id: projectId,
+      title,
+      description,
+      genre,
+      audience,
+      style,
+      story_length,
+      user_id
+    });
+    
+    // Create the project with explicit string values
+    const result = await dbRW.execute({
+      sql: `INSERT INTO projects (id, title, description, genre, audience, style, story_length, user_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            RETURNING id`,
+      args: [
+        projectId,
+        title,
+        description,
+        genre,
+        audience,
+        style,
+        story_length,
+        user_id || null
+      ]
+    });
+    
+    return result.rows[0].id;
+  } catch (error) {
+    console.error('Error creating project:', error);
+    throw new Error('Failed to create project');
+  }
+}
+
+export async function createUser(user: { username: string; email: string; password?: string }) {
+  try {
+    // Initialize database
+    await initializeDatabase();
+    
+    // Generate a simple ID
+    const userId = generateId();
+    
+    // Ensure values are strings
+    const username = String(user.username || '');
+    const email = String(user.email || '');
+    
+    // If password is provided, hash it
+    let passwordHash = null;
+    let salt = null;
+    
+    if (user.password) {
+      try {
+        // Use local server-side auth utils instead of client-side
+        const { generateSalt, hashPassword } = await import('./auth-utils');
+        console.log('Server auth utils imported successfully');
+        
+        salt = generateSalt();
+        console.log('Salt generated:', salt);
+        
+        passwordHash = hashPassword(user.password, salt);
+        console.log('Password hashed successfully');
+      } catch (hashError) {
+        console.error('Error hashing password:', hashError);
+        if (hashError instanceof Error) {
+          console.error('Hash error message:', hashError.message);
+          console.error('Hash error stack:', hashError.stack);
+        }
+        throw new Error(`Password hashing failed: ${hashError instanceof Error ? hashError.message : String(hashError)}`);
+      }
+    }
+    
+    console.log('Creating user with values:', {
+      id: userId,
+      username,
+      email,
+      hasPassword: !!passwordHash
+    });
+    
+    // Create the user
+    const result = await dbRW.execute({
+      sql: `INSERT INTO users (id, username, email, password_hash, salt)
+            VALUES (?, ?, ?, ?, ?)
+            RETURNING id`,
+      args: [userId, username, email, passwordHash, salt]
+    });
+    
+    return result.rows[0].id;
+  } catch (error) {
+    console.error('Error creating user:', error);
+    if (error instanceof Error) {
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
+    throw error; // Rethrow the original error to preserve the stack trace
+  }
+}
+
+export async function getUserByEmail(email: string) {
+  try {
+    // Initialize database
+    await initializeDatabase();
+    
+    const result = await dbRO.execute({
+      sql: 'SELECT * FROM users WHERE email = ?',
+      args: [email]
+    });
+    
+    return result.rows[0] || null;
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    throw new Error('Failed to fetch user');
+  }
+}
+
+export async function getProjectsByUserId(userId: string) {
+  try {
+    // Initialize database and run migrations
+    await initializeDatabase();
+    
+    try {
+      // Try to query with user_id
+      const result = await dbRO.execute({
+        sql: 'SELECT * FROM projects WHERE user_id = ? ORDER BY created_at DESC',
+        args: [userId]
+      });
+      
+      return result.rows;
+    } catch (error) {
+      // If there's an error with the user_id column, fall back to all projects
+      console.error('Error querying with user_id, falling back to all projects:', error);
+      
+      // Get all projects as fallback
+      const allProjects = await getProjects();
+      return allProjects;
+    }
+  } catch (error) {
+    console.error('Error fetching user projects:', error);
+    throw new Error('Failed to fetch user projects');
+  }
+}
+
+export async function authenticateUser(email: string, password: string) {
+  try {
+    // Get user by email
+    const user = await getUserByEmail(email);
+    
+    if (!user) {
+      return null; // User not found
+    }
+    
+    // If user exists but has no password (legacy user), return the user
+    if (!user.password_hash || !user.salt) {
+      return user;
+    }
+    
+    // Verify password
+    const { verifyPassword } = await import('./auth-utils');
+    const isValid = verifyPassword(password, user.salt, user.password_hash);
+    
+    if (!isValid) {
+      return null; // Invalid password
+    }
+    
+    // Return user without sensitive data
+    const { password_hash, salt, ...safeUser } = user;
+    return safeUser;
+  } catch (error) {
+    console.error('Error authenticating user:', error);
+    throw new Error('Authentication failed');
+  }
+}
