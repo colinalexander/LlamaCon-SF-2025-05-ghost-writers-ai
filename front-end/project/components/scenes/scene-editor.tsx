@@ -3,16 +3,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useProject } from '@/lib/project-context';
 import { toast } from 'sonner';
-import { useEditor, EditorContent } from '@tiptap/react';
+import { useEditor, EditorContent, Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import Highlight from '@tiptap/extension-highlight';
 import Placeholder from '@tiptap/extension-placeholder';
+import Highlight from '@tiptap/extension-highlight';
 import Document from '@tiptap/extension-document';
-import History from '@tiptap/extension-history';
 import * as Y from 'yjs';
-import { WebsocketProvider } from 'y-websocket';
-import Collaboration from '@tiptap/extension-collaboration';
-import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -41,26 +37,17 @@ export default function SceneEditor({ sceneId, initialContent, onSave }: SceneEd
 
   // Initialize Yjs document for collaboration
   const ydoc = new Y.Doc();
-  const provider = new WebsocketProvider('ws://localhost:1234', `scene-${sceneId}`, ydoc);
+  // const provider = new WebsocketProvider('ws://localhost:1234', `scene-${sceneId}`, ydoc);
   const ytext = ydoc.getText('content');
 
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({
-        history: false,
-      }),
+      StarterKit.configure({}),
       Highlight,
       Placeholder.configure({
         placeholder: 'Start writing your scene...',
       }),
       Document,
-      History,
-      Collaboration.configure({
-        document: ydoc,
-      }),
-      CollaborationCursor.configure({
-        provider,
-      }),
     ],
     content: initialContent || '',
     editorProps: {
@@ -69,21 +56,22 @@ export default function SceneEditor({ sceneId, initialContent, onSave }: SceneEd
       },
     },
     onUpdate: ({ editor }) => {
-      if (autoSaveEnabled) {
-        const debounceTimer = setTimeout(() => {
-          handleSave(editor.getHTML());
-        }, 2000);
-
-        return () => clearTimeout(debounceTimer);
-      }
+      // Temporarily disable auto-save
+      // if (autoSaveEnabled) {
+      //   const debounceTimer = setTimeout(() => {
+      //     handleSave(editor.getHTML());
+      //   }, 2000);
+      //
+      //   return () => clearTimeout(debounceTimer);
+      // }
     },
   });
 
   useEffect(() => {
-    if (sceneId && projectId) {
-      fetchHistory();
+    if (sceneId) {
+      // fetchHistory(); // Temporarily disable history fetching
     }
-  }, [sceneId, projectId]);
+  }, [sceneId]);
 
   // Effect to update editor content when initialContent or sceneId changes
   useEffect(() => {
@@ -155,9 +143,10 @@ export default function SceneEditor({ sceneId, initialContent, onSave }: SceneEd
     try {
       setSaving(true);
       await onSave(content);
-      toast.success('Scene saved');
-      fetchHistory();
-    } catch (error) {
+      toast.success('Scene saved successfully');
+      setSaving(false); // Corrected typo: setIsSaving -> setSaving
+      // fetchHistory(); // Re-fetch history after saving - Temporarily disable
+    } catch (error: any) {
       toast.error('Failed to save scene');
     } finally {
       setSaving(false);

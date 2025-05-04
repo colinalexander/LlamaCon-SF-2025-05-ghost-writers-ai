@@ -27,7 +27,7 @@ export async function createCharacter(projectId: string, characterData: Characte
       id,
       project_id,
       name,
-      codename,
+      codename_or_alias,
       role,
       background,
       personality_traits,
@@ -64,7 +64,7 @@ export async function updateCharacter(id: string, projectId: string, characterDa
   const result = await dbRW.execute({
     sql: `UPDATE characters SET
       name = ?,
-      codename = ?,
+      codename_or_alias = ?,
       role = ?,
       background = ?,
       personality_traits = ?,

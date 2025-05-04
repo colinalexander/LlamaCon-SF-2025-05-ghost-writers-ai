@@ -46,6 +46,23 @@ export async function POST(request: Request) {
       );
     }
 
+    // Construct args array, ensuring undefined values become null
+    const args = [
+      crypto.randomUUID(),
+      projectId,
+      characterData.name,
+      characterData.codename || null,
+      characterData.role,
+      characterData.background,
+      characterData.personality_traits || null,
+      characterData.skills,
+      characterData.wants,
+      characterData.fears,
+      characterData.appearance,
+      characterData.status,
+      characterData.notes || null
+    ];
+
     const result = await dbRW.execute({
       sql: `INSERT INTO characters (
         id,
@@ -65,21 +82,7 @@ export async function POST(request: Request) {
         updated_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
       RETURNING id`,
-      args: [
-        crypto.randomUUID(),
-        projectId,
-        character.name,
-        character.codename_or_alias || null,
-        character.role,
-        character.background,
-        character.personalityTraits,
-        character.skills,
-        character.wants,
-        character.fears,
-        character.appearance,
-        character.status,
-        character.notes || null
-      ]
+      args: args
     });
 
     return NextResponse.json({ id: result.rows[0].id });

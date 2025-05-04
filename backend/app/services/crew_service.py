@@ -7,6 +7,7 @@ import os
 import uuid
 from datetime import datetime
 from typing import List, Dict, Any, Optional
+import logging
 
 from crewai import Agent, Crew, Task, Process, LLM
 from dotenv import load_dotenv
@@ -14,6 +15,7 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
+logger = logging.getLogger(__name__)
 
 class SceneGenerationCrew:
     """Crew for scene generation using CrewAI."""
@@ -224,6 +226,19 @@ class SceneGenerationCrew:
     def continuity_task(self, prose: Task) -> Task:
         """Create the continuity check task."""
 
+        # Prepare context strings from instance data
+        if self.include_memory and self.memory_data:
+            # Convert list of dicts to a simple string representation for the prompt
+            memory_context = "\n".join([str(item) for item in self.memory_data])
+        else:
+            memory_context = "Memory context was not requested or is unavailable."
+
+        if self.character_data:
+            # Convert list of dicts to a simple string representation for the prompt
+            character_context = "\n".join([str(item) for item in self.character_data])
+        else:
+            character_context = "Character context is unavailable."
+
         return Task(
             description=(
                 "Review the generated scene prose against the provided memory context and character details.\n\n"
@@ -275,7 +290,21 @@ class SceneGenerationCrew:
         crew = self.create_crew()
         result = crew.kickoff()  # CrewOutput
 
-        raw_text = result.raw if hasattr(result, "raw") else str(result)
+        # Ensure we get the output from the PROSE task (always index 2)
+        # The final result from kickoff() might be the continuity task if enabled.
+        prose_task_output = None
+        if result and hasattr(result, 'tasks_output') and len(result.tasks_output) > 2:
+            prose_task_output = result.tasks_output[2] # Get the TaskOutput for the prose task
+
+        # Extract the raw text from the prose task's output
+        raw_text = ""
+        if prose_task_output:
+            raw_text = prose_task_output.raw if hasattr(prose_task_output, "raw") else str(prose_task_output)
+        else:
+            # Fallback or error handling if prose output isn't found
+            raw_text = str(result.raw) if hasattr(result, "raw") else str(result)
+            logger.warning(f"Could not find prose task output (index 2) in CrewOutput. Falling back to final result. Result: {raw_text[:100]}...")
+
         word_count = len(raw_text.split())
 
         return {

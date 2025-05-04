@@ -42,22 +42,24 @@ export async function createScene(projectId: string, sceneData: SceneInput): Pro
       summary,
       scene_order,
       created_at,
-      updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      updated_at,
+      content
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?)
     RETURNING id`,
     args: [
-      newId,
       projectId,
+      newId,
       sceneData.title,
-      sceneData.location,
-      sceneData.time,
-      sceneData.conflict,
-      sceneData.charactersPresent, // Now guaranteed to be present
-      sceneData.characterChanges ?? null, // Default optional field to null
-      sceneData.importantActions, // Now guaranteed to be present
-      sceneData.mood,
-      sceneData.summary,
-      nextOrder
+      sceneData.location ?? null, // Default to null
+      sceneData.time ?? null, // Default to null
+      sceneData.conflict ?? null, // Default to null
+      sceneData.charactersPresent ?? null, // Default to null
+      sceneData.characterChanges ?? null,
+      sceneData.importantActions ?? null, // Default to null
+      sceneData.mood ?? null, // Default to null
+      sceneData.summary ?? null, // Default to null
+      nextOrder,
+      sceneData.content ?? '', // Default to empty string
     ]
   });
   return result.rows[0].id as unknown as string;
@@ -91,19 +93,21 @@ export async function updateScene(sceneId: string, projectId: string, sceneData:
       important_actions = ?,
       mood = ?,
       summary = ?,
+      content = ?, 
       updated_at = CURRENT_TIMESTAMP
       WHERE id = ? AND project_id = ?
       RETURNING id`,
     args: [
       sceneData.title,
-      sceneData.location,
-      sceneData.time,
-      sceneData.conflict,
-      sceneData.charactersPresent, // Use SceneInput field
+      sceneData.location ?? null, // Default to null
+      sceneData.time ?? null, // Default to null
+      sceneData.conflict ?? null, // Default to null
+      sceneData.charactersPresent ?? null, // Default to null
       sceneData.characterChanges ?? null, // Use SceneInput field, default to null
-      sceneData.importantActions, // Use SceneInput field
-      sceneData.mood,
-      sceneData.summary,
+      sceneData.importantActions ?? null, // Default to null
+      sceneData.mood ?? null, // Default to null
+      sceneData.summary ?? null, // Default to null
+      sceneData.content ?? '', // Add content argument, default to empty string if not provided
       sceneId,
       projectId
     ]
