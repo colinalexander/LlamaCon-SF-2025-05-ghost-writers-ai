@@ -1,5 +1,6 @@
-import { dbRO, dbRW } from '@/lib/db';
 import { NextResponse } from 'next/server';
+import { getScenes, createScene } from '@/lib/scenes-data';
+import { SceneInput } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,12 +16,8 @@ export async function GET(request: Request) {
       );
     }
 
-    const result = await dbRO.execute({
-      sql: 'SELECT * FROM scenes WHERE project_id = ? ORDER BY scene_order ASC',
-      args: [projectId]
-    });
-
-    return NextResponse.json(result.rows);
+    const scenes = await getScenes(projectId);
+    return NextResponse.json(scenes);
   } catch (error) {
     console.error('Error fetching scenes:', error);
     return NextResponse.json(
@@ -33,7 +30,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const data = await request.json();
-    const { projectId, ...scene } = data;
+    const { projectId, ...sceneData } = data as { projectId: string } & SceneInput;
 
     if (!projectId) {
       return NextResponse.json(
@@ -42,52 +39,17 @@ export async function POST(request: Request) {
       );
     }
 
-    // Get the highest scene_order for the project
-    const orderResult = await dbRO.execute({
-      sql: 'SELECT COALESCE(MAX(scene_order), 0) as max_order FROM scenes WHERE project_id = ?',
-      args: [projectId]
-    });
-    const nextOrder = orderResult.rows[0].max_order + 1;
-
-    const result = await dbRW.execute({
-      sql: `INSERT INTO scenes (
-        id,
-        project_id,
-        title,
-        location,
-        time,
-        conflict,
-        characters_present,
-        character_changes,
-        important_actions,
-        mood,
-        summary,
-        scene_order,
-        created_at,
-        updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-      RETURNING id`,
-      args: [
-        crypto.randomUUID(),
-        projectId,
-        scene.title,
-        scene.location,
-        scene.time,
-        scene.conflict,
-        scene.charactersPresent,
-        scene.characterChanges,
-        scene.importantActions,
-        scene.mood,
-        scene.summary,
-        nextOrder
-      ]
-    });
-
-    return NextResponse.json({ id: result.rows[0].id });
+    const newSceneId = await createScene(projectId, sceneData);
+    return NextResponse.json({ id: newSceneId });
   } catch (error) {
     console.error('Error creating scene:', error);
+    // More detailed logging for debugging
+    if (error instanceof Error) {
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
     return NextResponse.json(
-      { error: 'Failed to create scene' },
+      { error: 'Failed to create scene: ' + (error instanceof Error ? error.message : 'Unknown error') },
       { status: 500 }
     );
   }

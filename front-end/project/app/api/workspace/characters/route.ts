@@ -1,5 +1,6 @@
-import { dbRO, dbRW } from '@/lib/db';
 import { NextResponse } from 'next/server';
+import { getCharacters, createCharacter } from '@/lib/characters-data';
+import { CharacterInput } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,12 +16,8 @@ export async function GET(request: Request) {
       );
     }
 
-    const result = await dbRO.execute({
-      sql: 'SELECT * FROM characters WHERE project_id = ? ORDER BY created_at DESC',
-      args: [projectId]
-    });
-
-    return NextResponse.json(result.rows);
+    const characters = await getCharacters(projectId);
+    return NextResponse.json(characters);
   } catch (error) {
     console.error('Error fetching characters:', error);
     return NextResponse.json(
@@ -33,7 +30,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const data = await request.json();
-    const { projectId, ...character } = data;
+    const { projectId, ...characterData } = data as { projectId: string } & CharacterInput;
 
     if (!projectId) {
       return NextResponse.json(
@@ -42,43 +39,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const result = await dbRW.execute({
-      sql: `INSERT INTO characters (
-        id,
-        project_id,
-        name,
-        codename,
-        role,
-        background,
-        personality_traits,
-        skills,
-        wants,
-        fears,
-        appearance,
-        status,
-        notes,
-        created_at,
-        updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-      RETURNING id`,
-      args: [
-        crypto.randomUUID(),
-        projectId,
-        character.name,
-        character.codename || null,
-        character.role,
-        character.background,
-        character.personalityTraits,
-        character.skills,
-        character.wants,
-        character.fears,
-        character.appearance,
-        character.status,
-        character.notes || null
-      ]
-    });
-
-    return NextResponse.json({ id: result.rows[0].id });
+    const newCharacterId = await createCharacter(projectId, characterData);
+    return NextResponse.json({ id: newCharacterId });
   } catch (error) {
     console.error('Error creating character:', error);
     return NextResponse.json(

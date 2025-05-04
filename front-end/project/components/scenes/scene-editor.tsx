@@ -8,7 +8,7 @@ import StarterKit from '@tiptap/starter-kit';
 import Highlight from '@tiptap/extension-highlight';
 import Placeholder from '@tiptap/extension-placeholder';
 import Document from '@tiptap/extension-document';
-import DocumentHistory from '@tiptap/extension-document-history';
+import DocumentHistory from '@tiptap/extension-history';
 import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
 import Collaboration from '@tiptap/extension-collaboration';
@@ -17,7 +17,8 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { History, Save, Undo, Redo, Keyboard } from 'lucide-react';
+import { History, Save, Undo, Redo, Keyboard, SparklesIcon } from 'lucide-react';
+import SceneGenerationDialog from './scene-generation-dialog';
 import {
   Tooltip,
   TooltipContent,
@@ -61,7 +62,7 @@ export default function SceneEditor({ sceneId, initialContent, onSave }: SceneEd
         provider,
       }),
     ],
-    content: initialContent,
+    content: initialContent || '',
     editorProps: {
       attributes: {
         class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl focus:outline-none max-w-none min-h-[500px] p-4',
@@ -83,6 +84,14 @@ export default function SceneEditor({ sceneId, initialContent, onSave }: SceneEd
       fetchHistory();
     }
   }, [sceneId, projectId]);
+
+  // Effect to update editor content when initialContent or sceneId changes
+  useEffect(() => {
+    if (editor && (initialContent !== undefined)) {
+      // Reset editor content when switching scenes
+      editor.commands.setContent(initialContent || '');
+    }
+  }, [editor, initialContent, sceneId]);
 
   useEffect(() => {
     const handleKeyboard = (e: KeyboardEvent) => {
@@ -235,6 +244,17 @@ export default function SceneEditor({ sceneId, initialContent, onSave }: SceneEd
               </div>
 
               <div className="flex gap-2 items-center">
+                {projectId && (
+                  <SceneGenerationDialog 
+                    sceneId={sceneId}
+                    projectId={projectId}
+                    onGeneratedContent={(content) => {
+                    // Insert generated content into the editor
+                    editor.commands.setContent(content);
+                    toast.success('Content added to editor');
+                  }}
+                  />
+                )}
                 <Button
                   variant="outline"
                   size="sm"

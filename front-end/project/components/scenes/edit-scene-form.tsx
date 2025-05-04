@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useProject } from '@/lib/project-context';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
@@ -27,6 +27,11 @@ interface EditSceneFormProps {
 export default function EditSceneForm({ scene, onSubmit }: EditSceneFormProps) {
   const { projectId } = useProject();
   const [loading, setLoading] = useState(false);
+  
+  // Debug projectId on component mount
+  useEffect(() => {
+    console.log('EditSceneForm - projectId from context:', projectId);
+  }, [projectId]);
 
   const [formData, setFormData] = useState({
     title: scene?.title || '',
@@ -43,6 +48,15 @@ export default function EditSceneForm({ scene, onSubmit }: EditSceneFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    
+    // Debug projectId
+    console.log('Submitting scene with projectId:', projectId);
+    
+    if (!projectId) {
+      toast.error('Project ID is missing. Please try again or reload the page.');
+      setLoading(false);
+      return;
+    }
 
     try {
       const url = scene
@@ -51,9 +65,21 @@ export default function EditSceneForm({ scene, onSubmit }: EditSceneFormProps) {
       
       const method = scene ? 'PUT' : 'POST';
 
+      // Include explicit project ID debugging
+      console.log('Making fetch request to:', url);
+      console.log('Request payload:', { ...formData, projectId });
+      
+      // TypeScript safety check - ensure projectId is a string (should be caught by earlier check too)
+      if (!projectId) {
+        throw new Error('Project ID is required');
+      }
+      
       const response = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-project-id': projectId
+        },
         body: JSON.stringify({ ...formData, projectId })
       });
 
