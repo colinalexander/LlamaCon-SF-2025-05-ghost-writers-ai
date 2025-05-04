@@ -105,7 +105,7 @@ export async function verifySceneExists(sceneId: string, projectId: string): Pro
   }
   return sceneCheck.rows[0];
 }
-=======
+
 // Tavus video functions
 export async function createTavusVideo(videoData: {
   video_id: string;
