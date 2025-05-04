@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useProject } from '@/lib/project-context';
 import { useAuth } from '@/lib/auth-context';
@@ -160,7 +160,15 @@ export default function OnboardingPage() {
               Cancel
             </Button>
             {step < 3 ? (
-              <Button onClick={handleNext}>Next</Button>
+              <Button 
+                onClick={handleNext} 
+                disabled={
+                  (step === 1 && (!formData.genre || !formData.audience || !formData.style || !formData.storyLength)) ||
+                  (step === 2 && (!formData.title || !formData.description || !formData.tone))
+                }
+              >
+                Next
+              </Button>
             ) : (
               <Button onClick={handleSubmit}>Start Writing</Button>
             )}
