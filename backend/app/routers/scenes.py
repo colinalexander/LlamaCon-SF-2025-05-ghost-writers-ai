@@ -7,6 +7,7 @@ from fastapi import APIRouter, Request, Depends, HTTPException, Header, Query
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
 from datetime import datetime
+import uuid
 
 router = APIRouter()
 
@@ -41,6 +42,8 @@ class SceneReorder(BaseModel):
 
 # Stub implementation - will be replaced with database
 scenes_db = {}
+# Stub for scene history storage - will be replaced with database
+scene_history_db = {}
 
 @router.get("/", response_model=List[Scene])
 async def get_scenes(
@@ -110,3 +113,90 @@ async def reorder_scenes(
     scenes_db[scene_id]["position"] = reorder.new_position
     
     return {"message": "Scene position updated", "scene_id": scene_id, "new_position": reorder.new_position}
+
+# Scene content models for history tracking
+class SceneContent(BaseModel):
+    """Model for scene content updates"""
+    content: str
+    
+class SceneContentHistory(BaseModel):
+    """Model for scene content history entries"""
+    content: str
+    timestamp: datetime
+    
+    class Config:
+        from_attributes = True
+
+@router.post("/{scene_id}/content", response_model=Dict[str, Any])
+async def update_scene_content(
+    scene_id: str,
+    content_update: SceneContent,
+    project_id: str = Query(..., description="Project ID"),
+    x_user_id: Optional[str] = Header(None)
+):
+    """
+    Update scene content and record in history.
+    """
+    if not x_user_id:
+        raise HTTPException(status_code=401, detail="User ID required")
+    
+    if scene_id not in scenes_db:
+        raise HTTPException(status_code=404, detail="Scene not found")
+    
+    # Check project association
+    if scenes_db[scene_id].get("project_id") != project_id:
+        raise HTTPException(status_code=403, detail="Scene does not belong to specified project")
+    
+    # Create history entry
+    timestamp = datetime.now()
+    history_id = str(uuid.uuid4())
+    
+    history_entry = {
+        "id": history_id,
+        "scene_id": scene_id,
+        "project_id": project_id,
+        "content": content_update.content,
+        "timestamp": timestamp
+    }
+    
+    # Initialize history array for this scene if it doesn't exist
+    if scene_id not in scene_history_db:
+        scene_history_db[scene_id] = []
+    
+    # Add to history
+    scene_history_db[scene_id].append(history_entry)
+    
+    # Update scene content (would normally be in a separate field)
+    if "content" not in scenes_db[scene_id]:
+        scenes_db[scene_id]["content"] = content_update.content
+    else:
+        scenes_db[scene_id]["content"] = content_update.content
+    
+    return {"message": "Scene content updated", "scene_id": scene_id, "timestamp": timestamp}
+
+@router.get("/{scene_id}/history", response_model=List[SceneContentHistory])
+async def get_scene_history(
+    scene_id: str,
+    project_id: str = Query(..., description="Project ID"),
+    x_user_id: Optional[str] = Header(None)
+):
+    """
+    Get history of content updates for a scene.
+    """
+    if not x_user_id:
+        raise HTTPException(status_code=401, detail="User ID required")
+    
+    if scene_id not in scenes_db:
+        raise HTTPException(status_code=404, detail="Scene not found")
+    
+    # Check project association
+    if scenes_db[scene_id].get("project_id") != project_id:
+        raise HTTPException(status_code=403, detail="Scene does not belong to specified project")
+    
+    # Get history for scene
+    history = scene_history_db.get(scene_id, [])
+    
+    # Sort by timestamp, newest first
+    history.sort(key=lambda x: x.get("timestamp"), reverse=True)
+    
+    return history

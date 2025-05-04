@@ -62,7 +62,7 @@ export default function SceneEditor({ sceneId, initialContent, onSave }: SceneEd
         provider,
       }),
     ],
-    content: initialContent,
+    content: initialContent || '',
     editorProps: {
       attributes: {
         class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl focus:outline-none max-w-none min-h-[500px] p-4',
@@ -84,6 +84,14 @@ export default function SceneEditor({ sceneId, initialContent, onSave }: SceneEd
       fetchHistory();
     }
   }, [sceneId, projectId]);
+
+  // Effect to update editor content when initialContent or sceneId changes
+  useEffect(() => {
+    if (editor && (initialContent !== undefined)) {
+      // Reset editor content when switching scenes
+      editor.commands.setContent(initialContent || '');
+    }
+  }, [editor, initialContent, sceneId]);
 
   useEffect(() => {
     const handleKeyboard = (e: KeyboardEvent) => {

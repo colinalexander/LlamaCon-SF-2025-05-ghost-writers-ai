@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS scenes (
   important_actions TEXT NOT NULL,
   mood TEXT NOT NULL,
   summary TEXT NOT NULL,
+  content TEXT, -- Added content column for storing scene text
   scene_order INTEGER NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

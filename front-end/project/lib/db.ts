@@ -52,3 +52,21 @@ export async function createProject(project: any) {
     throw new Error('Failed to create project');
   }
 }
+
+/**
+ * Verifies if a scene exists and belongs to the specified project.
+ * @param sceneId The ID of the scene to check.
+ * @param projectId The ID of the project.
+ * @returns The scene data if found, otherwise null.
+ */
+export async function verifySceneExists(sceneId: string, projectId: string): Promise<any | null> {
+  const sceneCheck = await dbRO.execute({
+    sql: 'SELECT * FROM scenes WHERE id = ? AND project_id = ?',
+    args: [sceneId, projectId]
+  });
+
+  if (sceneCheck.rows.length === 0) {
+    return null;
+  }
+  return sceneCheck.rows[0];
+}

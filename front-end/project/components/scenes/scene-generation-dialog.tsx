@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Loader2, SparklesIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -39,6 +39,12 @@ export default function SceneGenerationDialog({
   const [wordCount, setWordCount] = useState(1000);
   const [includeMemory, setIncludeMemory] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [sceneContext, setSceneContext] = useState<{
+    scene?: any;
+    characters?: any[];
+    memory?: any[];
+  }>({characters: [], memory: []});
+  const [isLoadingContext, setIsLoadingContext] = useState(false);
 
   const handleGenerate = async () => {
     try {
@@ -94,6 +100,32 @@ export default function SceneGenerationDialog({
     }
   };
 
+  // Fetch scene context when dialog is opened
+  useEffect(() => {
+    if (open && sceneId && projectId) {
+      fetchSceneContext();
+    }
+  }, [open, sceneId, projectId]);
+
+  const fetchSceneContext = async () => {
+    try {
+      setIsLoadingContext(true);
+      const response = await fetch(`/api/workspace/scenes/${sceneId}/context?projectId=${projectId}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch scene context');
+      }
+      
+      const data = await response.json();
+      setSceneContext(data);
+    } catch (error) {
+      console.error('Error fetching scene context:', error);
+      toast.error('Failed to load scene context');
+    } finally {
+      setIsLoadingContext(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -139,6 +171,49 @@ export default function SceneGenerationDialog({
               AI will generate scene content that matches your scene's title, characters, and settings.
               Using scene memory helps maintain consistency with previous events.
             </p>
+          </div>
+          
+          {/* Scene Context Display */}
+          <div className="border p-3 rounded-md">
+            <h4 className="text-sm font-medium mb-2">Scene Context</h4>
+            {isLoadingContext ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <span>Loading context...</span>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div>
+                  <h5 className="text-xs font-semibold">Characters Present</h5>
+                  {sceneContext.characters && sceneContext.characters.length > 0 ? (
+                    <div className="text-xs">
+                      {sceneContext.characters.map((char: any) => (
+                        <span key={char.id} className="inline-block bg-muted rounded-full px-2 py-1 text-xs mr-1 mb-1">
+                          {char.name}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">No characters specified</p>
+                  )}
+                </div>
+                
+                <div>
+                  <h5 className="text-xs font-semibold">Scene Memory</h5>
+                  {sceneContext.memory && sceneContext.memory.length > 0 ? (
+                    <div className="text-xs max-h-[100px] overflow-y-auto">
+                      {sceneContext.memory.map((item: any) => (
+                        <div key={item.id} className="border-l-2 border-muted pl-2 mb-1">
+                          <p className="line-clamp-1">{item.text}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">No memory entries found</p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
         <DialogFooter>
