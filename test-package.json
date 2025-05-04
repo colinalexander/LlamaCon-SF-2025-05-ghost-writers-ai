@@ -1,0 +1,13 @@
+{
+  "name": "tavus-api-test",
+  "version": "1.0.0",
+  "description": "Test script for Tavus API",
+  "main": "test-tavus-api.js",
+  "scripts": {
+    "test": "node test-tavus-api.js",
+    "test:advanced": "node test-tavus-api-advanced.js"
+  },
+  "dependencies": {
+    "node-fetch": "^2.6.7"
+  }
+}

@@ -192,16 +192,48 @@ async function migrateDatabase() {
       console.log('Migration to version 3 completed');
     }
     
+    // Migration 3: Add firstName and lastName columns to users table if they don't exist
+    if (currentVersion < 4) {
+      console.log('Running migration to version 4...');
+      
+      // Check if firstName and lastName columns exist in users table
+      const tableInfo = await dbRO.execute("PRAGMA table_info(users)");
+      const hasFirstNameColumn = tableInfo.rows.some((row: any) => row.name === 'firstName');
+      const hasLastNameColumn = tableInfo.rows.some((row: any) => row.name === 'lastName');
+      
+      if (!hasFirstNameColumn) {
+        console.log('Adding firstName column to users table...');
+        await dbRW.execute(`ALTER TABLE users ADD COLUMN firstName TEXT`);
+      }
+      
+      if (!hasLastNameColumn) {
+        console.log('Adding lastName column to users table...');
+        await dbRW.execute(`ALTER TABLE users ADD COLUMN lastName TEXT`);
+      }
+      
+      // Update version
+      await dbRW.execute(`INSERT INTO db_version (version) VALUES (4)`);
+      console.log('Migration to version 4 completed');
+    }
+    
     console.log('Database migrations completed');
   } catch (error) {
     console.error('Error during migration:', error);
   }
 }
 
+// Track if initialization has been completed
+let databaseInitialized = false;
+
 // Initialize the database with required tables
 export async function initializeDatabase() {
   if (!useRealDb) {
     console.log('Using mock database, no initialization needed');
+    return;
+  }
+  
+  // Skip initialization if already done
+  if (databaseInitialized) {
     return;
   }
   
@@ -216,6 +248,8 @@ export async function initializeDatabase() {
         email TEXT NOT NULL UNIQUE,
         password_hash TEXT,
         salt TEXT,
+        firstName TEXT,
+        lastName TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -236,10 +270,40 @@ export async function initializeDatabase() {
       )
     `);
     
+    // Create tavus_videos table for storing video status
+    await dbRW.execute(`
+      CREATE TABLE IF NOT EXISTS tavus_videos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        video_id TEXT NOT NULL,
+        status TEXT NOT NULL,
+        hosted_url TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        project_id TEXT,
+        FOREIGN KEY (project_id) REFERENCES projects(id)
+      )
+    `);
+    
+    // Create conversation_transcripts table for storing Tavus conversation transcripts
+    await dbRW.execute(`
+      CREATE TABLE IF NOT EXISTS conversation_transcripts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        conversation_id TEXT NOT NULL UNIQUE,
+        transcript TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        project_id TEXT,
+        FOREIGN KEY (project_id) REFERENCES projects(id)
+      )
+    `);
+    
     console.log('Database tables initialized successfully');
     
     // Run migrations after initializing tables
     await migrateDatabase();
+    
+    // Mark initialization as complete
+    databaseInitialized = true;
+    console.log('Database initialization completed');
   } catch (error) {
     console.error('Error initializing database:', error);
   }
@@ -311,7 +375,7 @@ export async function createProject(project: any) {
   }
 }
 
-export async function createUser(user: { username: string; email: string; password?: string }) {
+export async function createUser(user: { username: string; email: string; password?: string; firstName?: string; lastName?: string }) {
   try {
     // Initialize database
     await initializeDatabase();
@@ -355,12 +419,16 @@ export async function createUser(user: { username: string; email: string; passwo
       hasPassword: !!passwordHash
     });
     
+    // Ensure firstName and lastName are strings
+    const firstName = String(user.firstName || '');
+    const lastName = String(user.lastName || '');
+    
     // Create the user
     const result = await dbRW.execute({
-      sql: `INSERT INTO users (id, username, email, password_hash, salt)
-            VALUES (?, ?, ?, ?, ?)
+      sql: `INSERT INTO users (id, username, email, password_hash, salt, firstName, lastName)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             RETURNING id`,
-      args: [userId, username, email, passwordHash, salt]
+      args: [userId, username, email, passwordHash, salt, firstName, lastName]
     });
     
     return result.rows[0].id;
@@ -446,5 +514,81 @@ export async function authenticateUser(email: string, password: string) {
   } catch (error) {
     console.error('Error authenticating user:', error);
     throw new Error('Authentication failed');
+  }
+}
+
+// Tavus video functions
+export async function createTavusVideo(videoData: {
+  video_id: string;
+  status: string;
+  hosted_url: string;
+  project_id?: string;
+}) {
+  try {
+    // Initialize database before creating a video record
+    await initializeDatabase();
+    
+    const now = new Date().toISOString();
+    const result = await dbRW.execute({
+      sql: `INSERT INTO tavus_videos (video_id, status, hosted_url, created_at, updated_at, project_id)
+            VALUES (?, ?, ?, ?, ?, ?)
+            RETURNING id`,
+      args: [
+        videoData.video_id,
+        videoData.status,
+        videoData.hosted_url,
+        now,
+        now,
+        videoData.project_id || null
+      ]
+    });
+    
+    console.log('Tavus video record created:', videoData.video_id);
+    return result.rows[0].id;
+  } catch (error) {
+    console.error('Error creating Tavus video record:', error);
+    throw new Error('Failed to create Tavus video record');
+  }
+}
+
+export async function updateTavusVideoStatus(video_id: string, status: string) {
+  try {
+    // Initialize database before updating
+    await initializeDatabase();
+    
+    const now = new Date().toISOString();
+    await dbRW.execute({
+      sql: `UPDATE tavus_videos 
+            SET status = ?, updated_at = ?
+            WHERE video_id = ?`,
+      args: [status, now, video_id]
+    });
+    
+    console.log('Tavus video status updated:', video_id, status);
+    return true;
+  } catch (error) {
+    console.error('Error updating Tavus video status:', error);
+    throw new Error('Failed to update Tavus video status');
+  }
+}
+
+export async function getTavusVideoStatus(video_id: string) {
+  try {
+    // Initialize database before querying
+    await initializeDatabase();
+    
+    const result = await dbRO.execute({
+      sql: `SELECT * FROM tavus_videos WHERE video_id = ?`,
+      args: [video_id]
+    });
+    
+    if (result.rows.length === 0) {
+      return null;
+    }
+    
+    return result.rows[0];
+  } catch (error) {
+    console.error('Error fetching Tavus video status:', error);
+    throw new Error('Failed to fetch Tavus video status');
   }
 }

@@ -139,6 +139,7 @@ export default function OnboardingPage() {
               {step === 3 && (
                 <OnboardingStepThree
                   genre={formData.genre}
+                  bookInfo={formData}
                 />
               )}
             </motion.div>

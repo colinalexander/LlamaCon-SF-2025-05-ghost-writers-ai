@@ -126,9 +126,90 @@
 - ✓ Redirect to sign-in from landing page
 - ✓ Sign-out functionality
 
+#### FE-015 – Interactive Writing Coach with Tavus Conversations
+- ✓ Real-time interactive conversations with genre-specific writing coaches
+- ✓ Conversation API integration with Tavus
+- ✓ Transcript generation and storage
+- ✓ Transcript viewer UI for reviewing advice
+- ✓ Genre-specific coaching based on project genre
+- ✓ Database schema for conversation transcripts
+- ✓ Webhook integration for transcript processing
+- ✓ Tabbed interface for conversation and transcript
+
 ### Implementation Notes
 
 Recent Updates:
+- Enhanced transcript UI with disabled button and status messages when transcript is not ready
+- Added automatic transcript status checking with 30-second polling
+- Improved user experience with tooltips explaining transcript generation process
+- Added clear visual indicators for transcript generation status
+- Implemented proper handling of transcript availability in the writing coach UI
+- Fixed transcript viewing functionality for Tavus conversations
+- Added conversation_transcripts table to database initialization
+- Enhanced transcript endpoint to handle status-only data
+- Improved TranscriptViewer UI with better status messages
+- Added database migration for firstName and lastName columns in users table
+- Fixed user registration issue with database schema
+- Enhanced user profile support with first and last name fields
+- Fixed database initialization issue with Tavus video status tracking
+- Added tavus_videos table to server-side database schema
+- Updated API routes to use server-side database functions
+- Implemented better error handling during video status polling
+- Added webhook endpoint for Tavus to notify when videos are ready
+- Added video status endpoint for frontend polling
+- Enhanced avatar display with clear processing state UI
+- Successfully integrated with Tavus API - video creation now working!
+- Fixed Tavus integration by updating to the correct API endpoint (tavusapi.com)
+- Updated URL formats to use the correct domains (tavus.video for videos, tavus.daily.co for conversations)
+- Removed persona_id parameter which was causing API errors
+- Extended timeout to 30 seconds to accommodate slower API responses
+- Added retry logic with exponential backoff for Tavus API calls
+- Implemented improved loading UI with progress indicators
+- Added camera/microphone permission notifications for users
+- Enhanced error handling with detailed user feedback
+- Updated video and conversation API endpoints to use the correct Tavus API endpoints
+- Added robust error handling and fallback mechanisms for Tavus API failures
+- Enhanced error reporting and user feedback for connection issues
+- Implemented mock Tavus player for development and fallback scenarios
+- Added environment variable to control mock player behavior
+- Created utility functions for Tavus service availability detection
+- Fixed DNS resolution issue with Tavus player by adding fallback content
+- Added graceful error handling for Tavus iframe loading failures
+- Implemented interactive writing coach with Tavus Conversations API
+- Added conversation transcript generation and storage
+- Created transcript viewer UI for reviewing coaching advice
+- Enhanced Tavus integration with real-time interactive conversations
+- Added database schema and API for conversation transcripts
+- Implemented webhook for transcript processing
+- Added direct API check endpoint to verify video status with Tavus servers
+- Implemented "Force Check" functionality for videos that time out during processing
+- Enhanced avatar display component with better timeout handling and user feedback
+- Created a global polling registry to manage and track all polling requests
+- Added rate limiting to prevent excessive API calls
+- Implemented server-side blocking of problematic video IDs
+- Added comprehensive debugging middleware for Tavus API requests
+- Enhanced error handling with specific error messages for different failure scenarios
+- Improved the UI to show a special state when videos time out with option to force check
+- Fixed issue where videos might be ready on Tavus servers but not detected by our system
+- Reduced maximum polling duration with option to manually check status afterward
+- Added detailed logging throughout the video processing workflow
+- Fixed timeout mechanism using absolute timestamps instead of counters
+- Improved cleanup of stale polling intervals
+- Fixed URL handling to use the most appropriate URL from Tavus API (stream_url, download_url, or hosted_url)
+- Added generation progress tracking for better user feedback
+- Fixed error in check endpoint by using mutable variables instead of trying to modify read-only objects
+- Enhanced force check functionality to show more specific status messages
+- Added success toast when video is ready after force check
+- Fixed Tavus API integration by using the correct API endpoints:
+  - Using persona_id for conversations API (/v2/conversations)
+  - Using replica_id for videos API (/v2/videos)
+- Updated onboarding flow to use the conversations API instead of the video API
+- Implemented direct API check for videos that have been in queued/generating state for too long
+- Fixed URL handling to use the most appropriate URL from Tavus API (stream_url, download_url, or hosted_url)
+- Added generation progress tracking for better user feedback
+- Fixed error in check endpoint by using mutable variables instead of trying to modify read-only objects
+- Enhanced force check functionality to show more specific status messages
+- Added success toast when video is ready after force check
 - Added user authentication with secure password storage
 - Implemented database migration system for schema updates
 - Added user-specific project listing and ownership
