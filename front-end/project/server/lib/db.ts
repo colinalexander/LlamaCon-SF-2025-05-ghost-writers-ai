@@ -290,6 +290,38 @@ export async function initializeDatabase() {
       )
     `);
     
+    // Create scenes table if it doesn't exist
+    await dbRW.execute(`
+      CREATE TABLE IF NOT EXISTS scenes (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        title TEXT NOT NULL,
+        location TEXT NOT NULL,
+        time TEXT NOT NULL,
+        conflict TEXT NOT NULL,
+        characters_present TEXT NOT NULL,
+        character_changes TEXT,
+        important_actions TEXT NOT NULL,
+        mood TEXT NOT NULL,
+        summary TEXT NOT NULL,
+        scene_order INTEGER NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+      )
+    `);
+    
+    // Create scene_history table if it doesn't exist
+    await dbRW.execute(`
+      CREATE TABLE IF NOT EXISTS scene_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        scene_id TEXT NOT NULL,
+        change_type TEXT NOT NULL,
+        change_description TEXT,
+        changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        changed_by TEXT,
+        FOREIGN KEY (scene_id) REFERENCES scenes(id) ON DELETE CASCADE
+=======
     // Create tavus_videos table for storing video status
     await dbRW.execute(`
       CREATE TABLE IF NOT EXISTS tavus_videos (
@@ -313,6 +345,7 @@ export async function initializeDatabase() {
         created_at TEXT NOT NULL,
         project_id TEXT,
         FOREIGN KEY (project_id) REFERENCES projects(id)
+
       )
     `);
     

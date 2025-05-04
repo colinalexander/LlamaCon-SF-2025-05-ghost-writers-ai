@@ -51,10 +51,14 @@ export default function ScenesPage() {
 
   const fetchScenes = async () => {
     try {
-      // Store projectId in localStorage for ApiClient to use
-      if (projectId) {
-        localStorage.setItem('currentProjectId', projectId);
+      if (!projectId) {
+        toast.error('Project ID is missing');
+        setLoading(false);
+        return;
       }
+      
+      // Store projectId in localStorage for ApiClient to use
+      localStorage.setItem('currentProjectId', projectId);
       
       const data = await ApiClient.get<Scene[]>(`/api/workspace/scenes?projectId=${projectId}`, {
         requiresProject: true
@@ -62,6 +66,7 @@ export default function ScenesPage() {
       
       setScenes(data);
     } catch (error) {
+      console.error('Scene fetch error:', error);
       toast.error('Failed to load scenes');
     } finally {
       setLoading(false);
@@ -89,10 +94,13 @@ export default function ScenesPage() {
       setScenes(newScenes);
 
       try {
-        // Store projectId in localStorage for ApiClient to use
-        if (projectId) {
-          localStorage.setItem('currentProjectId', projectId);
+        // Make sure projectId is available before making the request
+        if (!projectId) {
+          throw new Error('Project ID is required');
         }
+        
+        // Store projectId in localStorage for ApiClient to use
+        localStorage.setItem('currentProjectId', projectId);
         
         await ApiClient.post('/api/workspace/scenes/reorder', {
           scenes: newScenes.map(({ id, scene_order }) => ({ id, scene_order })),

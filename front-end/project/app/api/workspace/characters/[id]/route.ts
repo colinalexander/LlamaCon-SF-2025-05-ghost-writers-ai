@@ -1,5 +1,10 @@
-import { dbRO, dbRW } from '@/lib/db';
 import { NextResponse } from 'next/server';
+import {
+  getCharacterById,
+  updateCharacter,
+  deleteCharacter
+} from '@/lib/characters-data';
+import { CharacterInput } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,19 +13,16 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const result = await dbRO.execute({
-      sql: 'SELECT * FROM characters WHERE id = ?',
-      args: [params.id]
-    });
+    const character = await getCharacterById(params.id);
 
-    if (result.rows.length === 0) {
+    if (!character) {
       return NextResponse.json(
         { error: 'Character not found' },
         { status: 404 }
       );
     }
 
-    return NextResponse.json(result.rows[0]);
+    return NextResponse.json(character);
   } catch (error) {
     console.error('Error fetching character:', error);
     return NextResponse.json(
@@ -35,50 +37,27 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const data = await request.json();
-    const { projectId, ...character } = data;
+    const { projectId, ...characterData } = (await request.json()) as {
+      projectId: string;
+    } & CharacterInput;
 
-    const result = await dbRW.execute({
-      sql: `UPDATE characters SET
-        name = ?,
-        codename = ?,
-        role = ?,
-        background = ?,
-        personality_traits = ?,
-        skills = ?,
-        wants = ?,
-        fears = ?,
-        appearance = ?,
-        status = ?,
-        notes = ?,
-        updated_at = CURRENT_TIMESTAMP
-        WHERE id = ? AND project_id = ?
-        RETURNING id`,
-      args: [
-        character.name,
-        character.codename || null,
-        character.role,
-        character.background,
-        character.personalityTraits,
-        character.skills,
-        character.wants,
-        character.fears,
-        character.appearance,
-        character.status,
-        character.notes || null,
-        params.id,
-        projectId
-      ]
-    });
-
-    if (result.rows.length === 0) {
+    if (!projectId) {
       return NextResponse.json(
-        { error: 'Character not found' },
+        { error: 'Project ID is required' },
+        { status: 400 }
+      );
+    }
+
+    const success = await updateCharacter(params.id, projectId, characterData);
+
+    if (!success) {
+      return NextResponse.json(
+        { error: 'Character not found or project ID mismatch' },
         { status: 404 }
       );
     }
 
-    return NextResponse.json({ id: result.rows[0].id });
+    return NextResponse.json({ id: params.id });
   } catch (error) {
     console.error('Error updating character:', error);
     return NextResponse.json(
@@ -93,8 +72,8 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { searchParams } = new URL(request.url);
-    const projectId = searchParams.get('projectId');
+    const url = new URL(request.url);
+    const projectId = url.searchParams.get('projectId');
 
     if (!projectId) {
       return NextResponse.json(
@@ -103,14 +82,11 @@ export async function DELETE(
       );
     }
 
-    const result = await dbRW.execute({
-      sql: 'DELETE FROM characters WHERE id = ? AND project_id = ? RETURNING id',
-      args: [params.id, projectId]
-    });
+    const success = await deleteCharacter(params.id, projectId);
 
-    if (result.rows.length === 0) {
+    if (!success) {
       return NextResponse.json(
-        { error: 'Character not found' },
+        { error: 'Character not found or project ID mismatch' },
         { status: 404 }
       );
     }

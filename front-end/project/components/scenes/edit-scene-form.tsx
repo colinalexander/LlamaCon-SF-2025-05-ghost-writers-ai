@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useProject } from '@/lib/project-context';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
@@ -28,6 +28,11 @@ interface EditSceneFormProps {
 export default function EditSceneForm({ scene, onSubmit }: EditSceneFormProps) {
   const { projectId } = useProject();
   const [loading, setLoading] = useState(false);
+  
+  // Debug projectId on component mount
+  useEffect(() => {
+    console.log('EditSceneForm - projectId from context:', projectId);
+  }, [projectId]);
 
   const [formData, setFormData] = useState({
     title: scene?.title || '',
@@ -44,12 +49,22 @@ export default function EditSceneForm({ scene, onSubmit }: EditSceneFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    
+    // Debug projectId
+    console.log('Submitting scene with projectId:', projectId);
+    
+    if (!projectId) {
+      toast.error('Project ID is missing. Please try again or reload the page.');
+      setLoading(false);
+      return;
+    }
 
     try {
       // Store projectId in localStorage for ApiClient to use
-      if (projectId) {
-        localStorage.setItem('currentProjectId', projectId);
-      }
+      localStorage.setItem('currentProjectId', projectId);
+      
+      // Include explicit project ID debugging
+      console.log('Making API request with payload:', { ...formData, projectId });
       
       if (scene) {
         // Update existing scene
