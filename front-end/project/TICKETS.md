@@ -139,6 +139,14 @@
 ### Implementation Notes
 
 Recent Updates:
+- Fixed 404 error when navigating to workspace sections after interacting with the avatar
+- Added "Back to Author's Workspace" buttons to all workspace section pages for improved navigation
+- Updated API calls to use ApiClient with proper authentication headers
+- Enhanced error handling for workspace API endpoints
+- Improved user experience with consistent navigation across all workspace sections
+- Fixed authentication issues with workspace API endpoints by using ApiClient
+- Standardized API call patterns across components for better maintainability
+
 - Enhanced transcript UI with disabled button and status messages when transcript is not ready
 - Added automatic transcript status checking with 30-second polling
 - Improved user experience with tooltips explaining transcript generation process

@@ -2,18 +2,26 @@
 
 import { useState, useEffect } from 'react';
 import { useProject } from '@/lib/project-context';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Copy, Download } from 'lucide-react';
+import { Copy, Download, ArrowLeft } from 'lucide-react';
 import ExportPreview from '@/components/export/export-preview';
 
 export default function ExportPage() {
   const [exportData, setExportData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const { projectId } = useProject();
+  const router = useRouter();
+  
+  const navigateToWorkspace = () => {
+    if (projectId) {
+      router.push(`/workspace/${projectId}`);
+    }
+  };
 
   const fetchExportData = async () => {
     try {
@@ -63,6 +71,16 @@ export default function ExportPage() {
   if (loading) {
     return (
       <div className="container mx-auto p-6">
+        <div className="mb-6">
+          <Button 
+            variant="outline" 
+            onClick={navigateToWorkspace}
+            className="flex items-center"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Author's Workspace
+          </Button>
+        </div>
         <div className="h-[600px] bg-muted animate-pulse rounded-lg" />
       </div>
     );
@@ -70,6 +88,16 @@ export default function ExportPage() {
 
   return (
     <div className="container mx-auto p-6">
+      <div className="mb-6">
+        <Button 
+          variant="outline" 
+          onClick={navigateToWorkspace}
+          className="flex items-center"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Author's Workspace
+        </Button>
+      </div>
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Story Export</h1>
         <div className="flex gap-2">

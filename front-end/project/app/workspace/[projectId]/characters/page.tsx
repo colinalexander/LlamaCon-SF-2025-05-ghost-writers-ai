@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { useProject } from '@/lib/project-context';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import CharacterCard from '@/components/characters/character-card';
 import CreateCharacterDialog from '@/components/characters/create-character-dialog';
 import ImportCharacterDialog from '@/components/characters/import-character-dialog';
-import { Plus } from 'lucide-react';
+import { Plus, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface Character {
@@ -28,6 +29,13 @@ export default function CharactersPage() {
   const [characters, setCharacters] = useState<Character[]>([]);
   const [loading, setLoading] = useState(true);
   const { projectId } = useProject();
+  const router = useRouter();
+  
+  const navigateToWorkspace = () => {
+    if (projectId) {
+      router.push(`/workspace/${projectId}`);
+    }
+  };
 
   const fetchCharacters = async () => {
     try {
@@ -51,6 +59,16 @@ export default function CharactersPage() {
   if (loading) {
     return (
       <div className="container mx-auto p-6">
+        <div className="mb-6">
+          <Button 
+            variant="outline" 
+            onClick={navigateToWorkspace}
+            className="flex items-center"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Author's Workspace
+          </Button>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-[400px] bg-muted animate-pulse rounded-lg" />
@@ -62,6 +80,16 @@ export default function CharactersPage() {
 
   return (
     <div className="container mx-auto p-6">
+      <div className="mb-6">
+        <Button 
+          variant="outline" 
+          onClick={navigateToWorkspace}
+          className="flex items-center"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Author's Workspace
+        </Button>
+      </div>
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Characters</h1>
         <div className="flex gap-2">

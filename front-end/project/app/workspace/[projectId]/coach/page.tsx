@@ -1,21 +1,33 @@
 'use client';
 
-import { useParams } from 'next/navigation';
-import { useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import WritingCoachSection from '@/components/tavus/writing-coach-section';
-import { initializeDatabase } from '@/lib/db';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 
 export default function CoachPage() {
   const params = useParams();
   const projectId = params.projectId as string;
+  const router = useRouter();
   
-  // Initialize database when the page loads
-  useEffect(() => {
-    initializeDatabase().catch(console.error);
-  }, []);
+  const navigateToWorkspace = () => {
+    if (projectId) {
+      router.push(`/workspace/${projectId}`);
+    }
+  };
 
   return (
     <div className="container mx-auto p-6">
+      <div className="mb-6">
+        <Button 
+          variant="outline" 
+          onClick={navigateToWorkspace}
+          className="flex items-center"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Author's Workspace
+        </Button>
+      </div>
       <h1 className="text-3xl font-bold mb-8">Writing Coach</h1>
       <div className="max-w-4xl mx-auto">
         <WritingCoachSection projectId={projectId} />

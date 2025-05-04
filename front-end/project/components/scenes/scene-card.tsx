@@ -12,6 +12,7 @@ import SceneGenerator from './scene-generator';
 import SceneEditor from './scene-editor';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { ApiClient } from '@/lib/api-client';
 
 interface SceneCardProps {
   scene: {
@@ -55,12 +56,15 @@ export default function SceneCard({ scene, onUpdate }: SceneCardProps) {
     if (!confirm('Are you sure you want to delete this scene?')) return;
 
     try {
-      const response = await fetch(
+      // Store projectId in localStorage for ApiClient to use
+      if (projectId) {
+        localStorage.setItem('currentProjectId', projectId);
+      }
+      
+      await ApiClient.delete(
         `/api/workspace/scenes/${scene.id}?projectId=${projectId}`,
-        { method: 'DELETE' }
+        { requiresProject: true }
       );
-
-      if (!response.ok) throw new Error('Failed to delete scene');
 
       toast.success('Scene deleted');
       onUpdate();
@@ -71,17 +75,18 @@ export default function SceneCard({ scene, onUpdate }: SceneCardProps) {
 
   const handleSaveContent = async (content: string) => {
     try {
-      const response = await fetch(`/api/workspace/scenes/${scene.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...scene,
-          content,
-          projectId,
-        }),
+      // Store projectId in localStorage for ApiClient to use
+      if (projectId) {
+        localStorage.setItem('currentProjectId', projectId);
+      }
+      
+      await ApiClient.put(`/api/workspace/scenes/${scene.id}`, {
+        ...scene,
+        content,
+        projectId,
+      }, {
+        requiresProject: true
       });
-
-      if (!response.ok) throw new Error('Failed to save scene content');
 
       toast.success('Scene content saved');
       onUpdate();

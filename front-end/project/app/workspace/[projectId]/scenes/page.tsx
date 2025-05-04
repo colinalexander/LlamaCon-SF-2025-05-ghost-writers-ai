@@ -2,9 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useProject } from '@/lib/project-context';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import SceneCard from '@/components/scenes/scene-card';
 import CreateSceneDialog from '@/components/scenes/create-scene-dialog';
+import { ApiClient } from '@/lib/api-client';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 import {
   DndContext,
   DragEndEvent,
@@ -39,6 +43,13 @@ export default function ScenesPage() {
   const [scenes, setScenes] = useState<Scene[]>([]);
   const [loading, setLoading] = useState(true);
   const { projectId } = useProject();
+  const router = useRouter();
+  
+  const navigateToWorkspace = () => {
+    if (projectId) {
+      router.push(`/workspace/${projectId}`);
+    }
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -49,9 +60,15 @@ export default function ScenesPage() {
 
   const fetchScenes = async () => {
     try {
-      const response = await fetch(`/api/workspace/scenes?projectId=${projectId}`);
-      if (!response.ok) throw new Error('Failed to fetch scenes');
-      const data = await response.json();
+      // Store projectId in localStorage for ApiClient to use
+      if (projectId) {
+        localStorage.setItem('currentProjectId', projectId);
+      }
+      
+      const data = await ApiClient.get<Scene[]>(`/api/workspace/scenes?projectId=${projectId}`, {
+        requiresProject: true
+      });
+      
       setScenes(data);
     } catch (error) {
       toast.error('Failed to load scenes');
@@ -81,16 +98,17 @@ export default function ScenesPage() {
       setScenes(newScenes);
 
       try {
-        const response = await fetch('/api/workspace/scenes/reorder', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            scenes: newScenes.map(({ id, scene_order }) => ({ id, scene_order })),
-            projectId,
-          }),
+        // Store projectId in localStorage for ApiClient to use
+        if (projectId) {
+          localStorage.setItem('currentProjectId', projectId);
+        }
+        
+        await ApiClient.post('/api/workspace/scenes/reorder', {
+          scenes: newScenes.map(({ id, scene_order }) => ({ id, scene_order })),
+          projectId,
+        }, {
+          requiresProject: true
         });
-
-        if (!response.ok) throw new Error('Failed to reorder scenes');
       } catch (error) {
         toast.error('Failed to save scene order');
         fetchScenes(); // Revert to original order on error
@@ -101,6 +119,16 @@ export default function ScenesPage() {
   if (loading) {
     return (
       <div className="container mx-auto p-6">
+        <div className="mb-6">
+          <Button 
+            variant="outline" 
+            onClick={navigateToWorkspace}
+            className="flex items-center"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Author's Workspace
+          </Button>
+        </div>
         <div className="grid grid-cols-1 gap-6">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-[200px] bg-muted animate-pulse rounded-lg" />
@@ -112,6 +140,16 @@ export default function ScenesPage() {
 
   return (
     <div className="container mx-auto p-6">
+      <div className="mb-6">
+        <Button 
+          variant="outline" 
+          onClick={navigateToWorkspace}
+          className="flex items-center"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Author's Workspace
+        </Button>
+      </div>
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Scenes</h1>
         <CreateSceneDialog onSceneCreated={fetchScenes} />

@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
+import { ApiClient } from '@/lib/api-client';
 
 interface EditSceneFormProps {
   scene?: {
@@ -45,19 +46,24 @@ export default function EditSceneForm({ scene, onSubmit }: EditSceneFormProps) {
     setLoading(true);
 
     try {
-      const url = scene
-        ? `/api/workspace/scenes/${scene.id}`
-        : '/api/workspace/scenes';
+      // Store projectId in localStorage for ApiClient to use
+      if (projectId) {
+        localStorage.setItem('currentProjectId', projectId);
+      }
       
-      const method = scene ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formData, projectId })
-      });
-
-      if (!response.ok) throw new Error('Failed to save scene');
+      if (scene) {
+        // Update existing scene
+        await ApiClient.put(`/api/workspace/scenes/${scene.id}`, 
+          { ...formData, projectId },
+          { requiresProject: true }
+        );
+      } else {
+        // Create new scene
+        await ApiClient.post('/api/workspace/scenes', 
+          { ...formData, projectId },
+          { requiresProject: true }
+        );
+      }
 
       toast.success(
         scene ? 'Scene updated successfully' : 'Scene created successfully'
