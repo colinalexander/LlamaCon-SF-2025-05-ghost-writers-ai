@@ -18,8 +18,8 @@ const useRealDb = process.env.TURSO_DATABASE_URL &&
                   process.env.TURSO_AUTH_TOKEN_RW;
 
 // Create clients or mock implementations
-let dbRO: any;
-let dbRW: any;
+export let dbRO: any;
+export let dbRW: any;
 
 if (useRealDb) {
   console.log('Using real Turso database');
@@ -216,6 +216,26 @@ async function migrateDatabase() {
       console.log('Migration to version 4 completed');
     }
     
+    // Migration 4: Drop and recreate characters table with codename_or_alias column
+    if (currentVersion < 5) {
+      console.log('Running migration to version 5...');
+      
+      // Check if characters table exists
+      const tableExists = await dbRO.execute(`
+        SELECT name FROM sqlite_master 
+        WHERE type='table' AND name='characters'
+      `);
+      
+      if (tableExists.rows.length > 0) {
+        console.log('Dropping existing characters table...');
+        await dbRW.execute(`DROP TABLE IF EXISTS characters`);
+      }
+      
+      // Update version
+      await dbRW.execute(`INSERT INTO db_version (version) VALUES (5)`);
+      console.log('Migration to version 5 completed');
+    }
+    
     console.log('Database migrations completed');
   } catch (error) {
     console.error('Error during migration:', error);
@@ -292,6 +312,28 @@ export async function initializeDatabase() {
         transcript TEXT NOT NULL,
         created_at TEXT NOT NULL,
         project_id TEXT,
+        FOREIGN KEY (project_id) REFERENCES projects(id)
+      )
+    `);
+    
+    // Create characters table for storing character information
+    await dbRW.execute(`
+      CREATE TABLE IF NOT EXISTS characters (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        codename_or_alias TEXT,
+        role TEXT,
+        background TEXT,
+        personality_traits TEXT,
+        skills TEXT,
+        wants TEXT,
+        fears TEXT,
+        appearance TEXT,
+        status TEXT,
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (project_id) REFERENCES projects(id)
       )
     `);

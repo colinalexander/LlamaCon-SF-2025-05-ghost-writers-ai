@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { initializeDatabase, dbRO } from '@/lib/db';
+import { initializeDatabase, dbRO } from '@/server/lib/db';
 
 export async function GET(
   request: NextRequest,

@@ -6,11 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Import } from 'lucide-react';
 import { useProject } from '@/lib/project-context';
 import { toast } from 'sonner';
+import { ApiClient } from '@/lib/api-client';
 
 interface Character {
   id: string;
   name: string;
-  codename: string | null;
+  codename_or_alias: string | null;
   role: string;
   background: string;
   personality_traits: string;
@@ -34,11 +35,10 @@ export default function ImportCharacterDialog({ onCharacterImported }: ImportCha
 
   const fetchSharedCharacters = async () => {
     try {
-      const response = await fetch('/api/workspace/characters/shared');
-      if (!response.ok) throw new Error('Failed to fetch shared characters');
-      const data = await response.json();
+      const data = await ApiClient.get<Character[]>('/api/workspace/characters/shared');
       setCharacters(data);
     } catch (error) {
+      console.error('Failed to fetch shared characters:', error);
       toast.error('Failed to load shared characters');
     }
   };
@@ -46,21 +46,24 @@ export default function ImportCharacterDialog({ onCharacterImported }: ImportCha
   const handleImport = async (character: Character) => {
     try {
       setLoading(true);
-      const response = await fetch('/api/workspace/characters', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...character,
-          projectId,
-        }),
+      
+      // Store projectId in localStorage for ApiClient to use
+      if (projectId) {
+        localStorage.setItem('currentProjectId', projectId);
+      }
+      
+      await ApiClient.post('/api/workspace/characters', {
+        ...character,
+        projectId,
+      }, {
+        requiresProject: true
       });
-
-      if (!response.ok) throw new Error('Failed to import character');
 
       toast.success('Character imported successfully');
       onCharacterImported();
       setOpen(false);
     } catch (error) {
+      console.error('Failed to import character:', error);
       toast.error('Failed to import character');
     } finally {
       setLoading(false);

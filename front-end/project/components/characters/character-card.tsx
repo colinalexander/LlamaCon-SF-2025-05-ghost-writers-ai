@@ -8,12 +8,13 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Pencil, Trash2 } from 'lucide-react';
 import EditCharacterForm from './edit-character-form';
+import { ApiClient } from '@/lib/api-client';
 
 interface CharacterCardProps {
   character: {
     id: string;
     name: string;
-    codename: string | null;
+    codename_or_alias: string | null;
     role: string;
     background: string;
     personality_traits: string;
@@ -35,16 +36,19 @@ export default function CharacterCard({ character, onUpdate }: CharacterCardProp
     if (!confirm('Are you sure you want to delete this character?')) return;
 
     try {
-      const response = await fetch(
-        `/api/workspace/characters/${character.id}?projectId=${projectId}`,
-        { method: 'DELETE' }
-      );
-
-      if (!response.ok) throw new Error('Failed to delete character');
+      // Store projectId in localStorage for ApiClient to use
+      if (projectId) {
+        localStorage.setItem('currentProjectId', projectId);
+      }
+      
+      await ApiClient.delete(`/api/workspace/characters/${character.id}?projectId=${projectId}`, {
+        requiresProject: true
+      });
 
       toast.success('Character deleted');
       onUpdate();
     } catch (error) {
+      console.error('Character delete error:', error);
       toast.error('Failed to delete character');
     }
   };
@@ -79,9 +83,9 @@ export default function CharacterCard({ character, onUpdate }: CharacterCardProp
             </Button>
           </div>
         </CardTitle>
-        {character.codename && (
+        {character.codename_or_alias && (
           <p className="text-sm text-muted-foreground">
-            aka {character.codename}
+            aka {character.codename_or_alias}
           </p>
         )}
       </CardHeader>

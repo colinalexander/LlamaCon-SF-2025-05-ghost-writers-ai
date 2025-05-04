@@ -1,10 +1,13 @@
-import { dbRO, dbRW } from '@/lib/db';
+import { dbRO, dbRW, initializeDatabase } from '@/server/lib/db';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
+    // Initialize database to ensure tables exist
+    await initializeDatabase();
+    
     const { searchParams } = new URL(request.url);
     const projectId = searchParams.get('projectId');
 
@@ -32,6 +35,9 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    // Initialize database to ensure tables exist
+    await initializeDatabase();
+    
     const data = await request.json();
     const { projectId, ...character } = data;
 
@@ -47,7 +53,7 @@ export async function POST(request: Request) {
         id,
         project_id,
         name,
-        codename,
+        codename_or_alias,
         role,
         background,
         personality_traits,
@@ -65,7 +71,7 @@ export async function POST(request: Request) {
         crypto.randomUUID(),
         projectId,
         character.name,
-        character.codename || null,
+        character.codename_or_alias || null,
         character.role,
         character.background,
         character.personalityTraits,

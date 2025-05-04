@@ -139,6 +139,18 @@
 ### Implementation Notes
 
 Recent Updates:
+- Fixed character creation functionality by updating database schema to use `codename_or_alias` instead of `codename`
+  - Issue: Character creation was failing with "table characters has no column named codename_or_alias" error
+  - Solution: 
+    1. Updated database schema in server-side db.ts to use `codename_or_alias` field
+    2. Modified API routes to use server-side database connection for consistent schema
+    3. Added database migration (v5) to drop and recreate the characters table with the correct schema
+    4. Updated all frontend components to use the new field name
+  - Test credentials: 
+    - First name: TEST
+    - Last name: USER
+    - Email: test.user@gmail.com
+    - Password: 123
 - Fixed 404 error when navigating to workspace sections after interacting with the avatar
 - Added "Back to Author's Workspace" buttons to all workspace section pages for improved navigation
 - Updated API calls to use ApiClient with proper authentication headers

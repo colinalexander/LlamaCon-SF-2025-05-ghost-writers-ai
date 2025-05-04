@@ -2,23 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { useProject } from '@/lib/project-context';
-import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import MemoryInspector from '@/components/memory/memory-inspector';
 import { ApiClient } from '@/lib/api-client';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { BackButton } from '@/components/ui/back-button';
 
 export default function MemoryPage() {
   const [currentSceneId, setCurrentSceneId] = useState<string | null>(null);
   const { projectId } = useProject();
-  const router = useRouter();
-  
-  const navigateToWorkspace = () => {
-    if (projectId) {
-      router.push(`/workspace/${projectId}`);
-    }
-  };
 
   useEffect(() => {
     if (projectId) {
@@ -48,16 +39,7 @@ export default function MemoryPage() {
   if (!currentSceneId) {
     return (
       <div className="container mx-auto p-6">
-        <div className="mb-6">
-          <Button 
-            variant="outline" 
-            onClick={navigateToWorkspace}
-            className="flex items-center"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Author's Workspace
-          </Button>
-        </div>
+        <BackButton projectId={projectId || undefined} />
         <p className="text-center text-muted-foreground">
           Create a scene to start tracking memory
         </p>
@@ -67,16 +49,7 @@ export default function MemoryPage() {
 
   return (
     <div className="container mx-auto p-6">
-      <div className="mb-6">
-        <Button 
-          variant="outline" 
-          onClick={navigateToWorkspace}
-          className="flex items-center"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Author's Workspace
-        </Button>
-      </div>
+      <BackButton projectId={projectId || undefined} />
       <MemoryInspector sceneId={currentSceneId} />
     </div>
   );
