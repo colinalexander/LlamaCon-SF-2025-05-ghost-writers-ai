@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useProject } from '@/lib/project-context';
+import { useAuth } from '@/lib/auth-context';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,7 @@ export default function OnboardingPage() {
   });
   const router = useRouter();
   const { setProjectId } = useProject();
+  const { user } = useAuth();
 
   const handleNext = () => {
     if (step < 3) {
@@ -45,12 +47,29 @@ export default function OnboardingPage() {
 
   const handleSubmit = async () => {
     try {
+      console.log('Onboarding: Submitting project data:', formData);
+      
+      // Add user_id to the form data
+      const projectData = {
+        ...formData,
+        user_id: user?.id
+      };
+      
+      console.log('Onboarding: Creating project with user_id:', user?.id);
+      
+      if (!user?.id) {
+        console.error('Onboarding: No user ID available for project creation');
+        toast.error('User authentication required. Please sign in again.');
+        router.push('/signin');
+        return;
+      }
+      
       const response = await fetch('/api/projects', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(projectData),
       });
 
       if (!response.ok) {
@@ -58,10 +77,26 @@ export default function OnboardingPage() {
       }
 
       const data = await response.json();
+      console.log('Onboarding: Project created with ID:', data.id);
+      
+      // Check if cookie was set by the API
+      console.log('Onboarding: Cookies after project creation:', document.cookie);
+      
       setProjectId(data.id);
+      console.log('Onboarding: Project ID set in context');
+      
+      // Check cookies again after setting project ID
+      console.log('Onboarding: Cookies after setting project ID:', document.cookie);
+      
       toast.success('Project created successfully!');
-      router.push(`/workspace/${data.id}`);
+      console.log('Onboarding: Navigating to workspace:', `/workspace/${data.id}`);
+      
+      // Add a small delay to ensure cookie is set before navigation
+      setTimeout(() => {
+        router.push(`/workspace/${data.id}`);
+      }, 100);
     } catch (error) {
+      console.error('Onboarding: Error creating project:', error);
       toast.error('Failed to create project');
     }
   };

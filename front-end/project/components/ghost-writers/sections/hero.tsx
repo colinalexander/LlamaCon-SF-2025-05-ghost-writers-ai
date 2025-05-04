@@ -64,7 +64,7 @@ export default function Hero({
   };
 
   const handleStartWriting = () => {
-    router.push('/onboarding');
+    router.push('/signin');
   };
 
   return (
@@ -111,12 +111,14 @@ export default function Hero({
             ))}
           </motion.div>
           
-          <motion.div variants={item}>
+          <motion.div 
+            variants={item}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.98 }}
+          >
             <Button 
               size="lg" 
               className="text-lg px-8 py-6 bg-primary hover:bg-primary/90 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.98 }}
               onClick={handleStartWriting}
             >
               {displayCtaText}

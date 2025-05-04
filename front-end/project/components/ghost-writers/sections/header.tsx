@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { X, Menu, PenLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useRouter } from "next/navigation";
 
 interface HeaderProps {
   promoBanner: {
@@ -21,6 +22,7 @@ interface HeaderProps {
 export default function Header({ promoBanner, menuItems, logo }: HeaderProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isBannerVisible, setIsBannerVisible] = useState(promoBanner.enabled);
+  const router = useRouter();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -86,7 +88,10 @@ export default function Header({ promoBanner, menuItems, logo }: HeaderProps) {
                   {item}
                 </a>
               ))}
-              <Button className="bg-primary text-white hover:bg-primary/90">
+              <Button 
+                className="bg-primary text-white hover:bg-primary/90"
+                onClick={() => router.push('/signin')}
+              >
                 Sign In
               </Button>
             </nav>
@@ -108,7 +113,10 @@ export default function Header({ promoBanner, menuItems, logo }: HeaderProps) {
                       {item}
                     </a>
                   ))}
-                  <Button className="mt-4 w-full bg-primary text-white hover:bg-primary/90">
+                  <Button 
+                    className="mt-4 w-full bg-primary text-white hover:bg-primary/90"
+                    onClick={() => router.push('/signin')}
+                  >
                     Sign In
                   </Button>
                 </nav>
