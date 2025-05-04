@@ -1,9 +1,9 @@
-fastapi==0.103.1
-uvicorn==0.23.2
-pydantic==2.4.2
+fastapi
+uvicorn
+pydantic==2.11.4
 python-dotenv==1.0.0
-crew==0.118.0
-llama-api-client==0.1.0
+crew
+llama-api-client
 pytest==7.4.2
-httpx==0.24.1
-python-multipart==0.0.6
+httpx==0.28.1
+python-multipart
