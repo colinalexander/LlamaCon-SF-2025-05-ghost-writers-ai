@@ -116,9 +116,25 @@
 - ✓ Project_id validation
 - ✓ Clear error surfacing
 
+#### FE-014 – User Authentication & Project Ownership
+- ✓ Sign-in and sign-up functionality
+- ✓ Secure password storage with salt and hashing
+- ✓ User-specific project listing
+- ✓ Authentication middleware
+- ✓ Project ownership with user_id
+- ✓ Database migration system
+- ✓ Redirect to sign-in from landing page
+- ✓ Sign-out functionality
+
 ### Implementation Notes
 
 Recent Updates:
+- Added user authentication with secure password storage
+- Implemented database migration system for schema updates
+- Added user-specific project listing and ownership
+- Enhanced sign-in/sign-up UI with better error handling
+- Added password hashing with salt for security
+- Fixed navigation between pages with proper authentication
 - Added shared characters functionality with template system
 - Implemented character import feature with pre-built archetypes
 - Enhanced character management with full CRUD operations

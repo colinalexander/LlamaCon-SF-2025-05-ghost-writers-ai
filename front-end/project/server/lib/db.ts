@@ -168,6 +168,30 @@ async function migrateDatabase() {
       console.log('Migration to version 2 completed');
     }
     
+    // Migration 2: Add password_hash and salt columns to users table if they don't exist
+    if (currentVersion < 3) {
+      console.log('Running migration to version 3...');
+      
+      // Check if password_hash and salt columns exist in users table
+      const tableInfo = await dbRO.execute("PRAGMA table_info(users)");
+      const hasPasswordHashColumn = tableInfo.rows.some((row: any) => row.name === 'password_hash');
+      const hasSaltColumn = tableInfo.rows.some((row: any) => row.name === 'salt');
+      
+      if (!hasPasswordHashColumn) {
+        console.log('Adding password_hash column to users table...');
+        await dbRW.execute(`ALTER TABLE users ADD COLUMN password_hash TEXT`);
+      }
+      
+      if (!hasSaltColumn) {
+        console.log('Adding salt column to users table...');
+        await dbRW.execute(`ALTER TABLE users ADD COLUMN salt TEXT`);
+      }
+      
+      // Update version
+      await dbRW.execute(`INSERT INTO db_version (version) VALUES (3)`);
+      console.log('Migration to version 3 completed');
+    }
+    
     console.log('Database migrations completed');
   } catch (error) {
     console.error('Error during migration:', error);
