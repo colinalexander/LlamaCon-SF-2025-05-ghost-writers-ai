@@ -4,14 +4,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
+interface StepOneData {
+  genre: string;
+  audience: string;
+  style: string;
+  storyLength: string;
+}
+
 interface StepOneProps {
-  data: {
-    genre: string;
-    audience: string;
-    style: string;
-    storyLength: string;
-  };
-  updateData: (data: Partial<typeof data>) => void;
+  data: StepOneData;
+  updateData: (data: Partial<StepOneData>) => void;
 }
 
 export default function OnboardingStepOne({ data, updateData }: StepOneProps) {
@@ -54,9 +56,9 @@ export default function OnboardingStepOne({ data, updateData }: StepOneProps) {
             <SelectValue placeholder="Select audience" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="children">Children (6–12)</SelectItem>
-            <SelectItem value="young-adult">Young Adult (13–17)</SelectItem>
             <SelectItem value="adult">Adult (18+)</SelectItem>
+            <SelectItem value="young-adult">Young Adult (13–17)</SelectItem>
+            <SelectItem value="children">Children (6–12)</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -103,13 +105,13 @@ export default function OnboardingStepOne({ data, updateData }: StepOneProps) {
             <SelectValue placeholder="Select length" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="flash">Flash Fiction (Under 1,000 words, 1 chapter)</SelectItem>
-            <SelectItem value="short-story">Short Story (1,000 – 7,500 words, 1 chapter)</SelectItem>
-            <SelectItem value="novelette">Novelette (7,500 – 17,500 words, 3 chapters)</SelectItem>
-            <SelectItem value="novella">Novella (17,500 – 40,000 words, 6 chapters)</SelectItem>
-            <SelectItem value="short-novel">Short Novel (40,000 – 60,000 words, 10 chapters)</SelectItem>
-            <SelectItem value="novel">Novel (60,000 – 100,000 words, 15 chapters)</SelectItem>
             <SelectItem value="epic">Epic Novel (100,000 – 200,000+ words, 25 chapters)</SelectItem>
+            <SelectItem value="novel">Novel (60,000 – 100,000 words, 15 chapters)</SelectItem>
+            <SelectItem value="short-novel">Short Novel (40,000 – 60,000 words, 10 chapters)</SelectItem>
+            <SelectItem value="novella">Novella (17,500 – 40,000 words, 6 chapters)</SelectItem>
+            <SelectItem value="novelette">Novelette (7,500 – 17,500 words, 3 chapters)</SelectItem>
+            <SelectItem value="short-story">Short Story (1,000 – 7,500 words, 1 chapter)</SelectItem>
+            <SelectItem value="flash">Flash Fiction (Under 1,000 words, 1 chapter)</SelectItem>
           </SelectContent>
         </Select>
       </div>

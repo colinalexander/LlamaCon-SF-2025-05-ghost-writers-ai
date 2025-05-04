@@ -16,6 +16,8 @@ export default function SignInPage() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [mode, setMode] = useState<'signin' | 'create'>('signin');
   const [error, setError] = useState<string | null>(null);
@@ -35,8 +37,8 @@ export default function SignInPage() {
         toast.success('Signed in successfully!');
         router.push('/dashboard');
       } else {
-        console.log('SignInPage: Creating account with:', { username, email, passwordLength: password?.length });
-        await signUp(username, email, password);
+        console.log('SignInPage: Creating account with:', { username, email, firstName, lastName, passwordLength: password?.length });
+        await signUp(username, email, password, firstName, lastName);
         toast.success('Account created successfully!');
         router.push('/dashboard');
       }
@@ -93,16 +95,38 @@ export default function SignInPage() {
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             {mode === 'create' && (
-              <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
-                <Input
-                  id="username"
-                  placeholder="Your username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  required={mode === 'create'}
-                />
-              </div>
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="username">Username</Label>
+                  <Input
+                    id="username"
+                    placeholder="Your username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    required={mode === 'create'}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">First Name</Label>
+                    <Input
+                      id="firstName"
+                      placeholder="Your first name"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Last Name</Label>
+                    <Input
+                      id="lastName"
+                      placeholder="Your last name"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </>
             )}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>

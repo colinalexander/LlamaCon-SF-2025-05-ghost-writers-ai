@@ -6,13 +6,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
+interface StepTwoData {
+  title: string;
+  description: string;
+  tone: string;
+}
+
 interface StepTwoProps {
-  data: {
-    title: string;
-    description: string;
-    tone: string;
-  };
-  updateData: (data: Partial<typeof data>) => void;
+  data: StepTwoData;
+  updateData: (data: Partial<StepTwoData>) => void;
 }
 
 export default function OnboardingStepTwo({ data, updateData }: StepTwoProps) {
@@ -29,13 +31,19 @@ export default function OnboardingStepTwo({ data, updateData }: StepTwoProps) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="description">One-Line Description</Label>
+        <div className="flex justify-between">
+          <Label htmlFor="description">One-Line Description</Label>
+          <span className="text-xs text-muted-foreground">
+            {data.description.length}/500 characters
+          </span>
+        </div>
         <Textarea
           id="description"
           value={data.description}
-          onChange={(e) => updateData({ description: e.target.value })}
+          onChange={(e) => updateData({ description: e.target.value.slice(0, 500) })}
           placeholder="Summarize your story in one sentence"
           rows={3}
+          maxLength={500}
         />
       </div>
 

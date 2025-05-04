@@ -20,6 +20,41 @@ export const dbRW = createClient({
   authToken: process.env.TURSO_AUTH_TOKEN_RW
 });
 
+// Initialize the database with required tables
+export async function initializeDatabase() {
+  try {
+    // Create conversation_transcripts table if it doesn't exist
+    await dbRW.execute(`
+      CREATE TABLE IF NOT EXISTS conversation_transcripts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        conversation_id TEXT NOT NULL,
+        transcript TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        project_id TEXT,
+        FOREIGN KEY (project_id) REFERENCES projects(id)
+      )
+    `);
+    
+    // Create tavus_videos table if it doesn't exist
+    await dbRW.execute(`
+      CREATE TABLE IF NOT EXISTS tavus_videos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        video_id TEXT NOT NULL,
+        status TEXT NOT NULL,
+        hosted_url TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        project_id TEXT,
+        FOREIGN KEY (project_id) REFERENCES projects(id)
+      )
+    `);
+    
+    console.log('Database tables initialized successfully');
+  } catch (error) {
+    console.error('Error initializing database:', error);
+  }
+}
+
 export async function getProjects() {
   try {
     const result = await dbRO.execute('SELECT * FROM projects ORDER BY created_at DESC');
@@ -69,4 +104,67 @@ export async function verifySceneExists(sceneId: string, projectId: string): Pro
     return null;
   }
   return sceneCheck.rows[0];
+}
+=======
+// Tavus video functions
+export async function createTavusVideo(videoData: {
+  video_id: string;
+  status: string;
+  hosted_url: string;
+  project_id?: string;
+}) {
+  try {
+    const now = new Date().toISOString();
+    const result = await dbRW.execute({
+      sql: `INSERT INTO tavus_videos (video_id, status, hosted_url, created_at, updated_at, project_id)
+            VALUES (?, ?, ?, ?, ?, ?)
+            RETURNING id`,
+      args: [
+        videoData.video_id,
+        videoData.status,
+        videoData.hosted_url,
+        now,
+        now,
+        videoData.project_id || null
+      ]
+    });
+    return result.rows[0].id;
+  } catch (error) {
+    console.error('Error creating Tavus video record:', error);
+    throw new Error('Failed to create Tavus video record');
+  }
+}
+
+export async function updateTavusVideoStatus(video_id: string, status: string) {
+  try {
+    const now = new Date().toISOString();
+    await dbRW.execute({
+      sql: `UPDATE tavus_videos 
+            SET status = ?, updated_at = ?
+            WHERE video_id = ?`,
+      args: [status, now, video_id]
+    });
+    return true;
+  } catch (error) {
+    console.error('Error updating Tavus video status:', error);
+    throw new Error('Failed to update Tavus video status');
+  }
+}
+
+export async function getTavusVideoStatus(video_id: string) {
+  try {
+    const result = await dbRO.execute({
+      sql: `SELECT * FROM tavus_videos WHERE video_id = ?`,
+      args: [video_id]
+    });
+    
+    if (result.rows.length === 0) {
+      return null;
+    }
+    
+    return result.rows[0];
+  } catch (error) {
+    console.error('Error fetching Tavus video status:', error);
+    throw new Error('Failed to fetch Tavus video status');
+  }
 }

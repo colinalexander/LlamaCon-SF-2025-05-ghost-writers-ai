@@ -7,13 +7,15 @@ interface User {
   id: string;
   username: string;
   email: string;
+  firstName?: string;
+  lastName?: string;
 }
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (username: string, email: string, password: string) => Promise<void>;
+  signUp: (username: string, email: string, password: string, firstName?: string, lastName?: string) => Promise<void>;
   signOut: () => void;
 }
 
@@ -53,14 +55,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const signUp = async (username: string, email: string, password: string) => {
+  const signUp = async (username: string, email: string, password: string, firstName?: string, lastName?: string) => {
     try {
-      console.log('AuthContext: Signing up with:', { username, email, passwordLength: password?.length });
+      console.log('AuthContext: Signing up with:', { username, email, firstName, lastName, passwordLength: password?.length });
       
       const response = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, email, password }),
+        body: JSON.stringify({ username, email, password, firstName, lastName }),
       });
       
       const data = await response.json();

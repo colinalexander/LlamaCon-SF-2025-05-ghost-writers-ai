@@ -8,6 +8,7 @@ from typing import List, Optional, Dict, Any, Literal
 from pydantic import BaseModel
 from datetime import datetime
 import os
+import json
 
 router = APIRouter()
 
@@ -42,6 +43,26 @@ class VideoGenerateResponse(BaseModel):
     url: Optional[str] = None
     created_at: datetime
 
+class ConversationRequest(BaseModel):
+    """Conversation creation request model"""
+    project_id: str
+    genre: str
+    user_name: Optional[str] = None
+
+class ConversationResponse(BaseModel):
+    """Conversation creation response model"""
+    project_id: str
+    conversation_id: str
+    conversation_url: str
+    genre: str
+    created_at: datetime
+
+class TranscriptWebhookRequest(BaseModel):
+    """Transcript webhook request model"""
+    event: str
+    conversation_id: str
+    transcript: Dict[str, Any]
+
 @router.post("/script", response_model=ScriptGenerateResponse)
 async def generate_script(
     request: ScriptGenerateRequest,
@@ -65,7 +86,7 @@ async def generate_script(
     }
     
     # Get the appropriate script template based on genre
-    genre_key = request.genre.lower()
+    genre_key = request.genre.lower() if request.genre else "fantasy"
     if genre_key not in script_templates:
         genre_key = "fantasy"  # default
         
@@ -78,7 +99,7 @@ async def generate_script(
         "children": " Focus on clear storytelling and positive messaging."
     }
     
-    audience_key = request.audience.lower()
+    audience_key = request.audience.lower() if request.audience else ""
     if audience_key in audience_adaption:
         base_script += audience_adaption[audience_key]
     
@@ -89,7 +110,7 @@ async def generate_script(
         "friendly": " I'm excited to collaborate with you on this writing adventure!"
     }
     
-    tone_key = request.tone.lower()
+    tone_key = request.tone.lower() if request.tone else "encouraging"
     if tone_key in tone_ending:
         base_script += tone_ending[tone_key]
     
@@ -136,3 +157,88 @@ async def generate_video(
     }
     
     return response
+
+@router.post("/conversation", response_model=ConversationResponse)
+async def create_conversation(
+    request: ConversationRequest,
+    x_user_id: Optional[str] = Header(None)
+):
+    """
+    Create a Tavus conversation with a writing coach.
+    """
+    if not x_user_id:
+        raise HTTPException(status_code=401, detail="User ID required")
+    
+    # Check for Tavus API key
+    tavus_api_key = os.getenv("TAVUS_API_KEY")
+    if not tavus_api_key:
+        raise HTTPException(status_code=500, detail="Tavus API key not configured")
+    
+    # Load genre configuration from tavus-prompts.json
+    try:
+        with open("tavus-prompts.json", "r") as f:
+            tavus_prompts = json.load(f)
+        
+        genre_key = request.genre.lower() if request.genre else "fantasy"
+        if genre_key not in tavus_prompts["genres"]:
+            raise HTTPException(status_code=400, detail=f"Invalid genre: {genre_key}")
+        
+        genre_config = tavus_prompts["genres"][genre_key]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error loading genre configuration: {str(e)}")
+    
+    # Create a webhook URL for receiving transcripts
+    # This should be a publicly accessible URL that points to your transcript endpoint
+    webhook_url = os.getenv("APP_URL", "https://your-domain.com") + "/api/tavus/transcript-webhook"
+    
+    # In the actual implementation, we would:
+    # 1. Call the Tavus API to create a conversation
+    # 2. Store the conversation ID and other metadata
+    # 3. Return the conversation information
+    
+    import uuid
+    
+    # Mock response for now
+    conversation_id = str(uuid.uuid4())
+    conversation_url = f"https://tavus.daily.co/{conversation_id}"
+    
+    response = {
+        "project_id": request.project_id,
+        "conversation_id": conversation_id,
+        "conversation_url": conversation_url,
+        "genre": request.genre,
+        "created_at": datetime.now()
+    }
+    
+    return response
+
+@router.post("/transcript-webhook", status_code=200)
+async def transcript_webhook(
+    request: TranscriptWebhookRequest
+):
+    """
+    Webhook endpoint for receiving conversation transcripts.
+    """
+    if request.event != "application.transcription_ready":
+        return {"status": "ignored"}
+    
+    try:
+        # Store the transcript in your database
+        # This could be in a dedicated transcripts table
+        # or as part of the project data
+        
+        # Example implementation:
+        # await db.execute(
+        #     """
+        #     INSERT INTO conversation_transcripts (conversation_id, transcript, created_at)
+        #     VALUES ($1, $2, $3)
+        #     """,
+        #     request.conversation_id,
+        #     json.dumps(request.transcript),
+        #     datetime.now()
+        # )
+        
+        return {"status": "success"}
+    except Exception as e:
+        print(f"Error processing transcript webhook: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to process transcript")

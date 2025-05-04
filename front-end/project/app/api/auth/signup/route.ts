@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   try {
-    const { username, email, password } = await request.json();
+    const { username, email, password, firstName, lastName } = await request.json();
     
     // Validate input
     if (!username || !email || !password) {
@@ -27,8 +27,8 @@ export async function POST(request: Request) {
     }
     
     // Create new user
-    const userId = await createUser({ username, email, password });
-    const user = { id: userId, username, email };
+    const userId = await createUser({ username, email, password, firstName, lastName });
+    const user = { id: userId, username, email, firstName, lastName };
     
     // Create response with user data
     const response = NextResponse.json(user);
