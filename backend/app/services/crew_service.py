@@ -7,6 +7,7 @@ import os
 import uuid
 from datetime import datetime
 from typing import List, Dict, Any, Optional
+import logging
 
 from crewai import Agent, Crew, Task, Process, LLM
 from dotenv import load_dotenv
@@ -14,6 +15,7 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
+logger = logging.getLogger(__name__)
 
 class SceneGenerationCrew:
     """Crew for scene generation using CrewAI."""
@@ -64,7 +66,7 @@ class SceneGenerationCrew:
     def plot_architect_agent(self) -> Agent:
         return Agent(
             role="Plot Architect",
-            goal="Design the plot structure and narrative arc for the scene",
+            goal=f"Design a compelling plot structure and narrative arc for a scene of approximately {self.word_count} words",
             backstory=(
                 "You are an expert storyteller with a talent for crafting "
                 "engaging narrative structures. You understand pacing, tension, "
@@ -77,10 +79,10 @@ class SceneGenerationCrew:
     def character_coach_agent(self) -> Agent:
         return Agent(
             role="Character Coach",
-            goal="Ensure character consistency and compelling dialogue",
+            goal="Ensure character actions, dialogue, and internal thoughts are consistent, compelling, and reveal personality",
             backstory=(
                 "You excel at writing authentic character voices and "
-                "creating dialogue that reveals personality. You ensure that characters "
+                "creating dialogue that reveals personality and advances the plot. You ensure that characters "
                 "stay true to their established traits and motivations across scenes."
             ),
             verbose=True,
@@ -90,10 +92,10 @@ class SceneGenerationCrew:
     def prose_stylist_agent(self) -> Agent:
         return Agent(
             role="Prose Stylist",
-            goal="Polish the prose and ensure stylistic consistency",
+            goal=f"Write and polish scene prose to meet stylistic requirements and a target word count of {self.word_count}",
             backstory=(
                 "You have an eye for beautiful prose and can elevate "
-                "any text through careful word choice and sentence structure. You maintain "
+                "any text through careful word choice, sentence structure, and pacing. You maintain "
                 "the desired tone and style while making the text flow elegantly."
             ),
             verbose=True,
@@ -103,11 +105,11 @@ class SceneGenerationCrew:
     def memory_keeper_agent(self) -> Agent:
         return Agent(
             role="Memory Keeper",
-            goal="Maintain continuity with previous scenes and established facts",
+            goal="Verify scene continuity against established facts, character histories, and world details",
             backstory=(
-                "You excel at maintaining narrative consistency by keeping track "
-                "of established facts, character histories, and world-building details. You ensure "
-                "that new scenes align with what has come before."
+                "You are meticulous about narrative consistency. You cross-reference scene details "
+                "with established facts, character histories, and world-building details to ensure "
+                "a cohesive story."
             ),
             verbose=True,
             llm=self.llm_model,
@@ -147,20 +149,30 @@ class SceneGenerationCrew:
         return Task(
             description=(
                 f"Create a detailed scene outline for a {genre} story aimed at {audience} readers, "
-                f"written in {style} style. The final scene should be approximately {self.word_count} words.\n\n"
-                f"{character_context}\n"
-                f"{memory_context}\n"
-                "Your outline should include:\n"
-                "1. Setting and atmosphere\n"
-                "2. Character objectives in the scene\n"
-                "3. Key plot points and revelations\n"
-                "4. Emotional beats and character development\n"
-                "5. Scene structure (beginning, middle, end)\n\n"
-                "Be specific and vivid in your descriptions. Include at least 5 key elements that must "
-                "appear in the final scene."
+                f"written in a {style} style. The final scene should be approximately {self.word_count} words long.\n\n"
+                f"**Project Context:**\n"
+                f"- Genre: {genre}\n"
+                f"- Audience: {audience}\n"
+                f"- Style: {style}\n\n"
+                f"**Character Context:**\n{character_context}\n"
+                f"**Memory Context (Previous Events):**\n{memory_context}\n"
+                "**Your Task:** Create a detailed scene outline focusing on these key elements:\n"
+                "1.  **Setting & Atmosphere:** Describe the location, time, and mood.\n"
+                "2.  **Character Objectives:** What does each character want in this scene?\n"
+                "3.  **Plot Points:** Key events, conflicts, and revelations.\n"
+                "4.  **Emotional Arc:** How characters' feelings change; key emotional beats.\n"
+                "5.  **Scene Structure:** A clear beginning, rising action, climax, falling action, and resolution for the scene.\n\n"
+                "Include at least 5 specific, tangible details or events that MUST be present in the final scene prose."
             ),
             agent=self.plot_architect_agent(),
-            expected_output="A detailed scene outline with setting, characters, plot points, and structure.",
+            expected_output=(
+                "A detailed scene outline in MARKDOWN format. It must include sections for: \n"
+                "- Setting & Atmosphere\n"
+                "- Character Objectives\n"
+                "- Plot Points (including 5+ specific required elements)\n"
+                "- Emotional Arc\n"
+                "- Scene Structure (Beginning, Middle, End)"
+            ),
         )
 
     def character_task(self, outline: Task) -> Task:
@@ -168,17 +180,23 @@ class SceneGenerationCrew:
 
         return Task(
             description=(
-                "Based on the scene outline, develop the character interactions and dialogue.\n\n"
-                "Focus on:\n"
-                "1. Creating distinctive character voices that reflect their personality\n"
-                "2. Writing dialogue that advances the plot\n"
-                "3. Showing (not telling) character emotions through dialogue and actions\n"
-                "4. Ensuring character consistency with established traits\n"
-                "5. Creating meaningful character arcs within the scene\n\n"
-                "For each character, include at least one moment that reveals something about their personality or advances their arc."
+                "Based on the provided scene outline, develop the character interactions, dialogue, and internal thoughts.\n\n"
+                "**Your Task:** Focus on the following aspects:\n"
+                "1.  **Distinctive Voices:** Write dialogue that clearly reflects each character's unique personality, background, and current emotional state.\n"
+                "2.  **Plot Advancement:** Ensure dialogue and actions move the scene's plot forward and contribute to character goals.\n"
+                "3.  **Show, Don't Tell:** Reveal emotions and intentions through subtext, actions, and reactions, rather than explicit statements.\n"
+                "4.  **Consistency:** Maintain consistency with established character traits, motivations, and relationships (referencing provided context).\n"
+                "5.  **Scene Arc:** Ensure each character involved has a mini-arc or development within the scene, however small.\n\n"
+                "Include at least one specific moment of dialogue OR action for each primary character that reveals a key aspect of their personality or motivation."
             ),
             agent=self.character_coach_agent(),
-            expected_output="Detailed character interactions and dialogue for the scene.",
+            expected_output=(
+                "A document detailing character interactions for the scene. It must include: \n"
+                "- Key dialogue snippets for major interactions.\n"
+                "- Descriptions of significant character actions and non-verbal cues.\n"
+                "- Notes on internal thoughts or feelings for point-of-view characters.\n"
+                "- Explicit mention of the 'revealing moment' for each character."
+            ),
             context=[outline],
         )
 
@@ -187,37 +205,57 @@ class SceneGenerationCrew:
 
         return Task(
             description=(
-                f"Transform the scene outline and character work into flowing prose.\n\n"
-                "Your writing should:\n"
-                "1. Match the desired style and tone for the project\n"
-                "2. Include vivid sensory details and imagery\n"
-                "3. Vary sentence structure and pacing for effect\n"
-                f"4. Maintain around {self.word_count} words total\n"
-                "5. Use appropriate genre conventions\n\n"
-                "Blend the dialogue naturally into the prose, and ensure the scene flows smoothly from beginning to end."
+                f"Using the scene outline and character details, write the full scene prose.\n\n"
+                f"**Your Task:** Ensure your writing adheres to these requirements:\n"
+                "1.  **Style & Tone:** Match the project's specified style ({self.project_metadata.get('style', 'unspecified')}) and tone.\n"
+                "2.  **Sensory Details:** Include vivid descriptions engaging multiple senses (sight, sound, smell, touch) to immerse the reader.\n"
+                "3.  **Pacing & Flow:** Vary sentence structure and paragraph length to control pacing; ensure smooth transitions.\n"
+                f"4.  **Word Count:** Target approximately {self.word_count} words for the final scene.\n"
+                "5.  **Genre Conventions:** Use language and tropes appropriate for the genre ({self.project_metadata.get('genre', 'unspecified')}).\n\n"
+                "Integrate dialogue naturally. Blend action, description, and character thought seamlessly."
             ),
             agent=self.prose_stylist_agent(),
-            expected_output="A complete scene in polished prose form.",
+            expected_output=(
+                f"The complete scene text, formatted as prose (paragraphs, dialogue, etc.). \n"
+                f"The total word count should be close to {self.word_count}.\n"
+                f"The prose must seamlessly integrate the outline's plot points and the character details."
+            ),
             context=[outline, character],
         )
 
     def continuity_task(self, prose: Task) -> Task:
         """Create the continuity check task."""
 
+        # Prepare context strings from instance data
+        if self.include_memory and self.memory_data:
+            # Convert list of dicts to a simple string representation for the prompt
+            memory_context = "\n".join([str(item) for item in self.memory_data])
+        else:
+            memory_context = "Memory context was not requested or is unavailable."
+
+        if self.character_data:
+            # Convert list of dicts to a simple string representation for the prompt
+            character_context = "\n".join([str(item) for item in self.character_data])
+        else:
+            character_context = "Character context is unavailable."
+
         return Task(
             description=(
-                "Review the completed scene for continuity with established facts and memory.\n\n"
-                "Check for:\n"
-                "1. Consistency with previous events and established character traits\n"
-                "2. Proper integration of world-building elements\n"
-                "3. Logical progression from previous scenes\n"
-                "4. Potential continuity errors or contradictions\n"
-                "5. Opportunities to strengthen connections to the broader narrative\n\n"
-                "If you find any issues, provide specific corrections. If the scene maintains good continuity,\n"
-                "highlight the strongest connections to previous material."
+                "Review the generated scene prose against the provided memory context and character details.\n\n"
+                f"**Memory Context Provided:**\n{memory_context}\n"
+                f"**Character Context Provided:**\n{character_context}\n\n"
+                "**Your Task:** Verify the following:\n"
+                "1.  **Factual Consistency:** Does the scene contradict any established facts from the memory context?\n"
+                "2.  **Character History:** Do character actions/dialogue align with their known history and established relationships?\n"
+                "3.  **World Building:** Does the scene maintain consistency with established world rules or details?\n\n"
+                "Identify any specific sentences or elements in the prose that conflict with the provided context."
             ),
             agent=self.memory_keeper_agent(),
-            expected_output="A final version of the scene with continuity issues resolved and connections strengthened.",
+            expected_output=(
+                "A brief report in MARKDOWN format. \n"
+                "- If inconsistencies are found: List each inconsistency, citing the specific conflicting element in the prose and the relevant context point.\n"
+                "- If NO inconsistencies are found: State 'No continuity issues found.'"
+            ),
             context=[prose],
         )
 
@@ -252,7 +290,21 @@ class SceneGenerationCrew:
         crew = self.create_crew()
         result = crew.kickoff()  # CrewOutput
 
-        raw_text = result.raw if hasattr(result, "raw") else str(result)
+        # Ensure we get the output from the PROSE task (always index 2)
+        # The final result from kickoff() might be the continuity task if enabled.
+        prose_task_output = None
+        if result and hasattr(result, 'tasks_output') and len(result.tasks_output) > 2:
+            prose_task_output = result.tasks_output[2] # Get the TaskOutput for the prose task
+
+        # Extract the raw text from the prose task's output
+        raw_text = ""
+        if prose_task_output:
+            raw_text = prose_task_output.raw if hasattr(prose_task_output, "raw") else str(prose_task_output)
+        else:
+            # Fallback or error handling if prose output isn't found
+            raw_text = str(result.raw) if hasattr(result, "raw") else str(result)
+            logger.warning(f"Could not find prose task output (index 2) in CrewOutput. Falling back to final result. Result: {raw_text[:100]}...")
+
         word_count = len(raw_text.split())
 
         return {

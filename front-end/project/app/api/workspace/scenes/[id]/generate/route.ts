@@ -144,32 +144,33 @@ export async function POST(
     });
 
     if (!response.ok) {
-      let errorDetail = 'Unknown error';
-      let errorData = {};
-      
+      let errorDetail = 'Unknown error from AI service';
+      let errorData: Record<string, any> = {};
+      const contentType = response.headers.get('content-type');
+
       try {
-        // Explicitly type the error data to include potential 'detail' property
-        interface ErrorResponse {
-          detail?: string;
-          [key: string]: any;
+        if (contentType && contentType.includes('application/json')) {
+          // Explicitly type the error data to include potential 'detail' property
+          interface ErrorResponse {
+            detail?: string;
+            [key: string]: any;
+          }
+          errorData = await response.json() as ErrorResponse;
+          errorDetail = errorData.detail || `Status ${response.status}: ${response.statusText}`;
+          console.error('Generation API error (JSON):', errorData);
+        } else {
+          // Handle non-JSON error responses (e.g., HTML)
+          const errorText = await response.text();
+          errorDetail = `AI service returned non-JSON error (Status ${response.status}). Check AI service logs. Response: ${errorText.substring(0, 100)}...`; // Log beginning of error
+          console.error('Generation API error (Non-JSON):', errorText);
         }
-        errorData = await response.json() as ErrorResponse;
-        errorDetail = errorData.detail || `Status ${response.status}: ${response.statusText}`;
-        console.error('Generation API error:', errorData);
-      } catch (jsonError) {
-        // If the response is not valid JSON
-        console.error('Failed to parse error response:', jsonError);
-        errorDetail = `Status ${response.status}: ${response.statusText}`;
-        // Try to get the text response
-        try {
-          const textError = await response.text();
-          console.error('Error response text:', textError);
-          errorDetail = textError || errorDetail;
-        } catch (textError) {
-          console.error('Failed to get error text:', textError);
-        }
+      } catch (parseError) {
+        // Catch errors during parsing (either JSON or Text)
+        errorDetail = `Failed to parse error response from AI service (Status ${response.status}). Check AI service logs.`;
+        console.error('Failed to parse error response:', parseError);
       }
-      
+
+      // Return a structured error to the frontend client
       console.error(`AI service failed: ${errorDetail}`);
       
       // If backend fails, generate a basic template instead of throwing an error

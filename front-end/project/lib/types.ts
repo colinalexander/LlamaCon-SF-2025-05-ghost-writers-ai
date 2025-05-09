@@ -40,7 +40,8 @@ export interface Scene {
 // Input type for creating/updating scenes
 export type SceneInput = Omit<Scene, 'id' | 'project_id' | 'scene_order' | 'created_at' | 'updated_at' | 'content'> & {
   // Explicitly include fields expected from client, map to DB columns in DAL
-  charactersPresent: string; // Required based on DB schema NOT NULL
+  charactersPresent?: string; // Required based on DB schema NOT NULL
   characterChanges?: string | null; // Optional based on original DB insert
-  importantActions: string; // Required based on DB schema NOT NULL
+  importantActions?: string; // Required based on DB schema NOT NULL
+  content?: string; // Add optional content field
 };

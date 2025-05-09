@@ -2,8 +2,6 @@
 
 ### Completed
 
-### In Progress
-
 #### BE-001 – Project API & Backend Structure
 Goal: Set up FastAPI backend with modular routing and metadata-aware projects
 Tasks:
@@ -15,8 +13,6 @@ Acceptance Criteria:
 - Server starts with uvicorn
 - Modules load with no error
 
-### To Do
-
 #### BE-002 – User Session Stub
 Goal: Simulate user context without full authentication
 Tasks:
@@ -26,6 +22,14 @@ Tasks:
 Acceptance Criteria:
 - All routes scoped per user
 - No cross-user data leakage
+
+### In Progress
+
+
+
+### To Do
+
+
 
 #### BE-003 – Project CRUD & Metadata
 Goal: Store author intent from onboarding
